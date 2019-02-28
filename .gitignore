@@ -13,3 +13,4 @@ dist
 /RUNNING_PID
 /.settings
 *.log
+**/secrets.conf

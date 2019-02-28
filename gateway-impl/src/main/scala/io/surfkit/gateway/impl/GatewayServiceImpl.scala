@@ -9,6 +9,7 @@ import com.lightbend.lagom.scaladsl.broker.TopicProducer
 import com.lightbend.lagom.scaladsl.persistence.{EventStreamElement, PersistentEntityRegistry}
 import com.lightbend.lagom.scaladsl.server.ServerServiceCall
 import com.lightbend.lagom.scaladsl.api.transport.ResponseHeader
+import com.typesafe.config.ConfigFactory
 
 import scala.concurrent.Future
 
@@ -17,10 +18,23 @@ import scala.concurrent.Future
   */
 class GatewayServiceImpl(persistentEntityRegistry: PersistentEntityRegistry) extends GatewayService {
 
+  lazy val cfg = ConfigFactory.load
+
   def oAuthService(service: String) = ServerServiceCall { (requestHeader, _) =>
-    println(s"oAuthService requestHeader: ${requestHeader}")
+    // use the "service" to build other OAuth providers using the same endpoint
+    val redirect = service.toLowerCase match {
+      case "github" =>
+        val client_id = cfg.getString("oauth.github.client-id")
+        val scope = cfg.getString("oauth.github.scope")
+        val state = cfg.getString("oauth.state")
+        val redirect_uri = "http://tasktick.io:63479/gateway/api/auth/github/callback"
+        s"https://github.com/login/oauth/authorize?client_id=${client_id}&scope=${scope}&state=${state}&redirect_uri=${redirect_uri}"
+      case _ => throw new RuntimeException("Failed")
+    }
+
     val responseHeader = ResponseHeader.Ok
-      .withHeader("Server", "Hello service")
+        .withStatus(303)
+        .withHeader("Location", redirect)
     Future.successful((responseHeader, Done))
   }
 

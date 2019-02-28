@@ -8,7 +8,7 @@ import com.lightbend.lagom.scaladsl.api.{Descriptor, Service, ServiceCall}
 import play.api.libs.json.{Format, Json}
 
 object GatewayService  {
-  val TOPIC_NAME = "greetings"
+  val TOPIC_NAME = "change-me"
 }
 
 /**
