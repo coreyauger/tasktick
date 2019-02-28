@@ -5,40 +5,34 @@ import io.surfkit.servicemanager.api.ServiceManagerService
 import com.lightbend.lagom.scaladsl.api.ServiceCall
 import com.lightbend.lagom.scaladsl.api.broker.Topic
 import com.lightbend.lagom.scaladsl.broker.TopicProducer
+import scala.concurrent.ExecutionContext.Implicits.global
 import com.lightbend.lagom.scaladsl.persistence.{EventStreamElement, PersistentEntityRegistry}
-
+import java.util.UUID
 /**
-  * Implementation of the LagomhelmService.
+  * Implementation of the ServiceManagerService.
   */
 class ServiceManagerServiceImpl(persistentEntityRegistry: PersistentEntityRegistry) extends ServiceManagerService {
 
-  override def hello(id: String) = ServiceCall { _ =>
-    // Look up the LagomHelm entity for the given ID.
-    val ref = persistentEntityRegistry.refFor[ServiceManagerEntity](id)
-
-    // Ask the entity the Hello command.
-    ref.ask(Hello(id))
+  override def getProject(id: UUID) = ServiceCall { _ =>
+    val ref = persistentEntityRegistry.refFor[ProjectEntity](id.toString)
+    ref.ask(GetProject(id)).map(convertProject)
   }
 
-  override def useGreeting(id: String) = ServiceCall { request =>
-    // Look up the LagomHelm entity for the given ID.
-    val ref = persistentEntityRegistry.refFor[ServiceManagerEntity](id)
-
-    // Tell the entity to use the greeting message specified.
-    ref.ask(UseGreetingMessage(request.message))
+  private def convertProject(ev: Project): api.Project = ev match{
+    case p:Project => api.Project(p.id, p.name)
   }
 
-
-  override def greetingsTopic(): Topic[api.GreetingMessageChanged] =
+  override def projectsTopic(): Topic[api.ProjectUpdated] =
     TopicProducer.singleStreamWithOffset {
       fromOffset =>
-        persistentEntityRegistry.eventStream(LagomhelmEvent.Tag, fromOffset)
+        persistentEntityRegistry.eventStream(ProjectEvent.Tag, fromOffset)
           .map(ev => (convertEvent(ev), ev.offset))
     }
 
-  private def convertEvent(helloEvent: EventStreamElement[LagomhelmEvent]): api.GreetingMessageChanged = {
+  private def convertEvent(helloEvent: EventStreamElement[ProjectEvent]): api.ProjectUpdated = {
     helloEvent.event match {
-      case GreetingMessageChanged(msg) => api.GreetingMessageChanged(helloEvent.entityId, msg)
+      case ProjectUpdated(p) => api.ProjectUpdated(convertProject(p))
     }
   }
+
 }

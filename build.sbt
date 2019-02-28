@@ -7,30 +7,9 @@ scalaVersion in ThisBuild := "2.12.4"
 val macwire = "com.softwaremill.macwire" %% "macros" % "2.3.0" % "provided"
 val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4" % Test
 
-lazy val `lagomhelm` = (project in file("."))
-  .aggregate(`lagomhelm-api`, `lagomhelm-impl`, `lagomhelm-stream-api`, `lagomhelm-stream-impl`, `servicemanager-api`, `servicemanager-impl`, `github-api`, `github-impl`)
+lazy val `tasktick` = (project in file("."))
+  .aggregate(`gateway-api`, `gateway-impl`, `gateway-stream-api`, `gateway-stream-impl`, `servicemanager-api`, `servicemanager-impl`)
 
-
-lazy val `github-api` = (project in file("github-api"))
-  .settings(
-    libraryDependencies ++= Seq(
-      lagomScaladslApi
-    )
-  )
-
-lazy val `github-impl` = (project in file("github-impl"))
-  .enablePlugins(LagomScala)
-  .settings(
-    libraryDependencies ++= Seq(
-      lagomScaladslPersistenceCassandra,
-      lagomScaladslKafkaBroker,
-      lagomScaladslTestKit,
-      macwire,
-      scalaTest
-    )
-  )
-  .settings(lagomForkedTestSettings: _*)
-  .dependsOn(`github-api`)
 
 
 lazy val `servicemanager-api` = (project in file("servicemanager-api"))
@@ -53,17 +32,16 @@ lazy val `servicemanager-impl` = (project in file("servicemanager-impl"))
   )
   .settings(lagomForkedTestSettings: _*)
   .dependsOn(`servicemanager-api`)
-  .dependsOn(`github-api`)
 
 
-lazy val `lagomhelm-api` = (project in file("lagomhelm-api"))
+lazy val `gateway-api` = (project in file("gateway-api"))
   .settings(
     libraryDependencies ++= Seq(
       lagomScaladslApi
     )
   )
 
-lazy val `lagomhelm-impl` = (project in file("lagomhelm-impl"))
+lazy val `gateway-impl` = (project in file("gateway-impl"))
   .enablePlugins(LagomScala)
   .settings(
     libraryDependencies ++= Seq(
@@ -75,17 +53,17 @@ lazy val `lagomhelm-impl` = (project in file("lagomhelm-impl"))
     )
   )
   .settings(lagomForkedTestSettings: _*)
-  .dependsOn(`lagomhelm-api`)
+  .dependsOn(`gateway-api`)
   .dependsOn(`servicemanager-api`)
 
-lazy val `lagomhelm-stream-api` = (project in file("lagomhelm-stream-api"))
+lazy val `gateway-stream-api` = (project in file("gateway-stream-api"))
   .settings(
     libraryDependencies ++= Seq(
       lagomScaladslApi
     )
   )
 
-lazy val `lagomhelm-stream-impl` = (project in file("lagomhelm-stream-impl"))
+lazy val `gateway-stream-impl` = (project in file("gateway-stream-impl"))
   .enablePlugins(LagomScala)
   .settings(
     libraryDependencies ++= Seq(
@@ -94,4 +72,4 @@ lazy val `lagomhelm-stream-impl` = (project in file("lagomhelm-stream-impl"))
       scalaTest
     )
   )
-  .dependsOn(`lagomhelm-stream-api`, `lagomhelm-api`)
+  .dependsOn(`gateway-stream-api`, `gateway-api`)
