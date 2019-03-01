@@ -6,6 +6,7 @@ scalaVersion in ThisBuild := "2.12.4"
 
 val macwire = "com.softwaremill.macwire" %% "macros" % "2.3.0" % "provided"
 val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4" % Test
+val jwt = "com.pauldijou" %% "jwt-play-json" % "2.1.0"
 
 lazy val `tasktick` = (project in file("."))
   .aggregate(`gateway-api`, `gateway-impl`, `gateway-stream-api`, `gateway-stream-impl`, `servicemanager-api`, `servicemanager-impl`)
@@ -39,7 +40,7 @@ lazy val `gateway-api` = (project in file("gateway-api"))
     libraryDependencies ++= Seq(
       lagomScaladslApi
     )
-  )
+  ).dependsOn(`servicemanager-api`)
 
 lazy val `gateway-impl` = (project in file("gateway-impl"))
   .enablePlugins(LagomScala)
@@ -48,6 +49,7 @@ lazy val `gateway-impl` = (project in file("gateway-impl"))
       lagomScaladslPersistenceCassandra,
       lagomScaladslKafkaBroker,
       lagomScaladslTestKit,
+      jwt,
       macwire,
       scalaTest
     )

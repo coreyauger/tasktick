@@ -34,8 +34,8 @@ abstract class GatewayApplication(context: LagomApplicationContext)
   override lazy val lagomServer: LagomServer = serverFor[GatewayService](wire[GatewayServiceImpl])
 
   // Register the JSON serializer registry
-  override lazy val jsonSerializerRegistry: JsonSerializerRegistry = GatewaySerializerRegistry
+  override lazy val jsonSerializerRegistry: JsonSerializerRegistry = UserSerializerRegistry
 
   // Register the gateway persistent entity
-  persistentEntityRegistry.register(wire[GatewayEntity])
+  persistentEntityRegistry.register(wire[UserEntity])
 }
