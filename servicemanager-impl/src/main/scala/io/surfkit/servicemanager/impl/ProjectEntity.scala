@@ -2,14 +2,10 @@ package io.surfkit.servicemanager.impl
 
 import java.time.Instant
 import java.util.UUID
-
-import akka.Done
 import com.lightbend.lagom.scaladsl.persistence.{AggregateEvent, AggregateEventTag, PersistentEntity}
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntity.ReplyType
 import com.lightbend.lagom.scaladsl.playjson.{JsonSerializer, JsonSerializerRegistry}
 import play.api.libs.json.{Format, Json}
-
-import scala.collection.immutable.Seq
 
 
 class ProjectEntity extends PersistentEntity {
@@ -45,11 +41,17 @@ class ProjectEntity extends PersistentEntity {
     * is a function of the current state to a set of actions.
     */
   override def behavior: Behavior = {
-    case ProjectState(proj, _) =>
+    case ProjectState(proj, created, archived) =>
       Actions()
         .onCommand[CreateProject, ProjectCreated] {
-          case (CreateProject(name, owner, team, description, imageUrl), ctx, state) =>
+          case (CreateProject(name, _, _, _, _), ctx, state) if name.isEmpty  =>
+            ctx.commandFailed(new RuntimeException("Can't create project with an empty name"))
+            ctx.done
+          case (CreateProject(name, owner, team, description, imageUrl), ctx, state) if !created  =>
             ctx.thenPersist(ProjectCreated(updateProject(state, name, owner, team, description, imageUrl)))(ctx.reply)
+          case (_, ctx, _) if created =>
+            ctx.commandFailed(new RuntimeException("Project Already Exists"))
+            ctx.done
         }.onCommand[UpdateProject, ProjectUpdated] {
           case (UpdateProject(name, owner, team, description, imageUrl), ctx, state) =>
             ctx.thenPersist(ProjectUpdated(updateProject(state, name, owner, team, description, imageUrl)))(ctx.reply)
@@ -58,24 +60,37 @@ class ProjectEntity extends PersistentEntity {
         }
 
         .onCommand[AddTask, TaskAdded] {
-          case (AddTask(name, section, parent), ctx, state) =>
+          case (AddTask(name, description, section, parent), ctx, state) =>
             // TODO: deal with parent
             ctx.thenPersist(TaskAdded(Task(
               id = UUID.randomUUID(),
               name = name,
-              description = "",
+              description = description,
               done =  false,
               assigned = None,
               startDate = None,
               endDate = None,
               lastUpdated = Instant.now(),
               section = section,
-              subTasks = List.empty[Task],
+              parent = parent,
               notes = Seq.empty[Note]
             )))(ctx.reply)
         }.onCommand[UpdateTask, TaskUpdated] {
-          case (UpdateTask(id, name, description, done, assigned, startDate, endDate, section), ctx, state) =>
-            val task = state.project.tasks.values.find(_.id == id).getOrElse{
+          case (UpdateTask(id, name, description, parent, done, assigned, startDate, endDate, section), ctx, state) =>
+            val task = state.project.tasks.values.find(_.id == id).map{ t =>
+              t.copy(
+                id = id,
+                name = name,
+                description = description,
+                done = done,
+                assigned = assigned,
+                lastUpdated = Instant.now(),
+                startDate = startDate,
+                parent = parent,
+                endDate = endDate,
+                section = section
+              )
+            }.getOrElse{
               Task(
                 id = id,
                 name = name,
@@ -86,7 +101,7 @@ class ProjectEntity extends PersistentEntity {
                 startDate = startDate,
                 endDate = endDate,
                 section = section,
-                subTasks = List.empty[Task],
+                parent = parent,
                 notes = Seq.empty[Note]
               )
             }
@@ -103,11 +118,11 @@ class ProjectEntity extends PersistentEntity {
         }
 
         .onReadOnlyCommand[GetProject, Project] {
-          case (GetProject(_), ctx, state) => ctx.reply(state.project)
+          case (GetProject(_), ctx, state) => ctx.reply(proj)
         }.onEvent {
-          case (ProjectCreated(project), state) => ProjectState(project.copy(tasks = state.project.tasks)) // retain the tasks..
-          case (ProjectUpdated(project), state) => ProjectState(project.copy(tasks = state.project.tasks)) // retain the tasks..
-          case (ProjectDeleted(id), state) => ProjectState(state.project, true) // archived
+          case (ProjectCreated(project), state) => state.copy(project = project.copy(tasks = state.project.tasks), true, false) // retain the tasks..
+          case (ProjectUpdated(project), state) => state.copy(project = project.copy(tasks = state.project.tasks)) // retain the tasks..
+          case (ProjectDeleted(_), state) => state.copy(archived = true)
 
           case (TaskAdded(task), state) => state.copy(project = state.project.copy(tasks = state.project.tasks + (task.id.toString -> task)) )
           case (TaskUpdated(task), state) => state.copy(project = state.project.copy(tasks = state.project.tasks + (task.id.toString -> task)) )
@@ -129,7 +144,7 @@ class ProjectEntity extends PersistentEntity {
 /**
   * The current state held by the persistent entity.
   */
-case class ProjectState(project: Project, archived: Boolean = false)
+case class ProjectState(project: Project, created: Boolean = false, archived: Boolean = false)
 object ProjectState {
   implicit val format: Format[ProjectState] = Json.format
 }
@@ -220,15 +235,14 @@ case class Task(
   endDate: Option[Instant],
   lastUpdated: Instant,
   section: String,
-  subTasks: List[Task],
-  notes: Seq[Note]
+  parent: Option[UUID] = None,
+  notes: Seq[Note] = Seq.empty[Note]
 )
 object Task {
   implicit val format: Format[Task] = Json.format
 }
 
 // Projects
-
 case class CreateProject(name: String, owner: UUID, team: UUID, description: String, imageUrl: Option[String] = None) extends ProjectCommand[ProjectCreated]
 object CreateProject {
   implicit val format: Format[CreateProject] = Json.format
@@ -238,7 +252,7 @@ case class UpdateProject( name: String,
                           owner: UUID,
                           team: UUID,
                           description: String,
-                          imgUrl: Option[String])extends ProjectCommand[ProjectUpdated]
+                          imageUrl: Option[String]) extends ProjectCommand[ProjectUpdated]
 object UpdateProject {
   implicit val format: Format[UpdateProject] = Json.format
 }
@@ -253,7 +267,7 @@ object GetProject {
 
 // Tasks
 
-case class AddTask(name: String, section: String, parent: Option[UUID] = None)extends ProjectCommand[TaskAdded]
+case class AddTask(name: String,  description: String, section: String, parent: Option[UUID] = None) extends ProjectCommand[TaskAdded]
 object AddTask {
   implicit val format: Format[AddTask] = Json.format
 }
@@ -261,6 +275,7 @@ object AddTask {
 case class UpdateTask( id: UUID,
                        name: String,
                        description: String,
+                       parent: Option[UUID],
                        done: Boolean,
                        assigned: Option[UUID],
                        startDate: Option[Instant],
@@ -298,8 +313,11 @@ object DeleteNote {
   * application loader.
   */
 object ServiceManagerSerializerRegistry extends JsonSerializerRegistry {
-  override def serializers: Seq[JsonSerializer[_]] = Seq(
+  override def serializers: scala.collection.immutable.Seq[JsonSerializer[_]] = scala.collection.immutable.Seq(
     JsonSerializer[Project],
+    JsonSerializer[Task],
+    JsonSerializer[Note],
+    JsonSerializer[GetProject],
     JsonSerializer[CreateProject],
     JsonSerializer[UpdateProject],
     JsonSerializer[DeleteProject],
