@@ -57,15 +57,15 @@ class ServiceManagerServiceImpl(persistentEntityRegistry: PersistentEntityRegist
   override def updateTask(project: UUID) = ServiceCall{ req =>
     val ref = persistentEntityRegistry.refFor[ProjectEntity](project.toString)
     ref.ask(UpdateTask(
-      id = req.id,
-      name = req.name,
-      description = req.description,
-      parent = req.parent,
-      done = req.done,
-      assigned = req.assigned,
-      startDate = req.startDate,
-      endDate = req.endDate,
-      section = req.section
+      id = req.task.id,
+      name = req.task.name,
+      description = req.task.description,
+      parent = req.task.parent,
+      done = req.task.done,
+      assigned = req.task.assigned,
+      startDate = req.task.startDate,
+      endDate = req.task.endDate,
+      section = req.task.section
     )).map(x => convertTask(x.task))
   }
 

@@ -1,8 +1,6 @@
 package io.surfkit.gateway.impl
 
-import java.time.LocalDateTime
 import java.util.UUID
-
 import com.lightbend.lagom.scaladsl.persistence.{AggregateEvent, AggregateEventTag, PersistentEntity}
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntity.ReplyType
 import com.lightbend.lagom.scaladsl.playjson.{JsonSerializer, JsonSerializerRegistry}
@@ -22,104 +20,88 @@ class UserEntity extends PersistentEntity {
   /**
     * The initial state. This is used if there is no snapshotted state to be found.
     */
-  override def initialState: UserState = UserState(None)
+  override def initialState: UserState = UserState(None, Seq.empty)
 
   /**
     * An entity can define different behaviours for different states, so the behaviour
     * is a function of the current state to a set of actions.
     */
   override def behavior: Behavior = {
-    case UserState(_) => Actions()
+    case UserState(_, _) => Actions()
 
       //
       // JWT Ideneity Commands / Actions / Events....
       ///
-        .onCommand[RegisterClient, GeneratedIdDone] {
-        case (RegisterClient(company, firstName, lastName, email, username, password), ctx, state) =>
-          state.client match {
-            case Some(_) =>
-              ctx.invalidCommand(s"Client with id ${entityId} is already registered")
-              ctx.done
-            case None =>
+      .onCommand[CreateUser, GeneratedIdDone] {
+        case (CreateUser(firstName, lastName, email, password), ctx, state) =>
+          state.user match {
+            case None if email == entityId =>
               val hashedPassword = SecurePasswordHashing.hashPassword(password)
               val userId = UUID.randomUUID()
-
-              ctx.thenPersistAll(
-                ClientCreated(company),
-                UserCreated(
-                  userId = userId,
-                  firstName = firstName,
-                  lastName = lastName,
-                  email = email,
-                  username = username,
-                  hashedPassword = hashedPassword
-                )
-              ) { () =>
-                ctx.reply(GeneratedIdDone(entityId))
-              }
-          }
-      }
-        .onCommand[CreateUser, GeneratedIdDone] {
-        case (CreateUser(firstName, lastName, email, username, password), ctx, state) =>
-          state.client match {
-            case Some(_) =>
-              val hashedPassword = SecurePasswordHashing.hashPassword(password)
-              val userId = UUID.randomUUID()
-
               ctx.thenPersist(
                 UserCreated(
                   userId = userId,
                   firstName = firstName,
                   lastName = lastName,
                   email = email,
-                  username = username,
                   hashedPassword = hashedPassword
                 )
               ) { _ =>
                 ctx.reply(GeneratedIdDone(userId.toString))
               }
-            case None =>
-              ctx.invalidCommand(s"Client with id ${entityId} not found")
+            case _ =>
+              ctx.invalidCommand(s"Failed to create user where entityId is ${entityId}")
               ctx.done
           }
       }
+      .onCommand[AddProjectRef, ProjectRefAdded] {
+        case (AddProjectRef(ref), ctx, _) =>
+          ctx.thenPersist(ProjectRefAdded(ref))(ctx.reply)
+      }
       .onReadOnlyCommand[GetUserState, UserStateDone] {
         case (GetUserState(), ctx, state) =>
-          state.client match {
+          state.user match {
             case None =>
-              ctx.invalidCommand(s"Client registered with ${entityId} can't be found")
-            case Some(client: Client) =>
+              ctx.invalidCommand(s"User registered with ${entityId} can't be found")
+            case Some(user: User) =>
               ctx.reply(
                 UserStateDone(
-                  id = entityId,
-                  company = client.company,
-                  users = client.users.map(user =>
-                    io.surfkit.gateway.api.User(
-                      id = user.id.toString,
-                      firstName = user.firstName,
-                      lastName = user.lastName,
-                      email = user.email,
-                      username = user.username
-                    )
+                  io.surfkit.gateway.api.User(
+                    id = user.id.toString,
+                    firstName = user.firstName,
+                    lastName = user.lastName,
+                    email = user.email,
+                    hashedPassword = user.hashedPassword
                   )
                 )
               )
           }
       }
-        .onEvent {
-          case (ClientCreated(company), _) => UserState(Some(Client(id = UUID.fromString(entityId), company = company)))
-          case (UserCreated(userId, firstName, lastName, email, username, password), state) =>
-            state.addUser(
-              User(
-                id = userId,
-                firstName = firstName,
-                lastName = lastName,
-                username = username,
-                email = email,
-                password = password
-              )
-            )
-        }
+      .onReadOnlyCommand[GetUserProjects, ProjectRefList] {
+        case (GetUserProjects(skip, take), ctx, state) =>
+            ctx.reply(ProjectRefList(state.projects))
+      }
+      .onReadOnlyCommand[GetUserProject, ProjectRef] {
+        case (GetUserProject(id), ctx, state) =>
+          state.projects.find(_.id == id) match{
+            case Some(ref) => ctx.reply(ref)
+            case None => ctx.invalidCommand(s"Could not locate project ${id} for user ${entityId}")
+          }
+      }
+      .onEvent {
+        case (UserCreated(userId, firstName, lastName, email, hashedPassword), state) =>
+          state.copy(Some(
+            User(
+              id = userId,
+              firstName = firstName,
+              lastName = lastName,
+              email = email,
+              hashedPassword = hashedPassword
+            ))
+          )
+        case (ProjectRefAdded(ref), state) =>
+          state.copy(projects = state.projects :+ ref)
+      }
     //
     // END : JWT Ideneity Commands / Actions / Events....
     //
@@ -127,123 +109,81 @@ class UserEntity extends PersistentEntity {
 }
 
 /**
-  * The current state held by the persistent entity.
+  * State
   */
 
-case class UserState(client: Option[Client]) {
-  def addUser(user: User): UserState = client match {
-    case None => throw new IllegalStateException("User can't be added before client is created")
-    case Some(client) =>
-      val newUsers =  client.users :+ user
-      UserState(Some(client.copy(users = newUsers)))
-  }
-}
-object UserState {
-  implicit val format: Format[UserState] = Json.format
-}
-
-case class Client(
-                   id: UUID,
-                   company: String,
-                   users: scala.collection.immutable.Seq[User] = scala.collection.immutable.Seq.empty
-                 )
-object Client {
-  implicit val format: Format[Client] = Json.format
-}
+case class UserState(user: Option[User], projects: Seq[ProjectRef])
+object UserState { implicit val format: Format[UserState] = Json.format }
 
 case class User(
-                 id: UUID,
-                 firstName: String,
-                 lastName: String,
-                 email: String,
-                 username: String,
-                 password: String
-               )
-object User {
-  implicit val format: Format[User] = Json.format
-}
-
-
-
+             id: UUID,
+             firstName: String,
+             lastName: String,
+             email: String,
+             hashedPassword: String
+           )
+object User { implicit val format: Format[User] = Json.format }
 
 
 /**
-  * This interface defines all the events that the UserEntity supports.
+  * Events
   */
 sealed trait UserEvent extends AggregateEvent[UserEvent] {
   def aggregateTag: AggregateEventTag[UserEvent] = UserEvent.Tag
 }
-
 object UserEvent {
   val Tag: AggregateEventTag[UserEvent] = AggregateEventTag[UserEvent]
 }
 
-
-
 case class ClientCreated(company: String) extends UserEvent
-object ClientCreated {
-  implicit val format: Format[ClientCreated] = Json.format
-}
+object ClientCreated { implicit val format: Format[ClientCreated] = Json.format }
 
-case class UserCreated(userId: UUID, firstName: String, lastName: String, email: String, username: String, hashedPassword: String) extends UserEvent
-object UserCreated {
-  implicit val format: Format[UserCreated] = Json.format
-}
+case class UserCreated(userId: UUID, firstName: String, lastName: String, email: String, hashedPassword: String) extends UserEvent
+object UserCreated { implicit val format: Format[UserCreated] = Json.format }
 
 
-
-
+case class ProjectRefAdded(ref: ProjectRef) extends UserEvent
+object ProjectRefAdded { implicit val format: Format[ProjectRefAdded] = Json.format }
 
 /**
-  * This interface defines all the commands that the UserEntity supports.
+  * Commands
   */
 sealed trait UserCommand[R] extends ReplyType[R]
-case class RegisterClient(
-                           company: String,
-                           firstName: String,
-                           lastName: String,
-                           email: String,
-                           username: String,
-                           password: String
-                         ) extends PersistentEntity.ReplyType[GeneratedIdDone] with UserCommand[GeneratedIdDone]
-object RegisterClient {
-  implicit val format: Format[RegisterClient] = Json.format
-}
 
 case class CreateUser(
-                       firstName: String,
-                       lastName: String,
-                       email: String,
-                       username: String,
-                       password: String
-                     ) extends PersistentEntity.ReplyType[GeneratedIdDone] with UserCommand[GeneratedIdDone]
-object CreateUser {
-  implicit val format: Format[CreateUser] = Json.format
-}
+             firstName: String,
+             lastName: String,
+             email: String,
+             password: String
+           ) extends UserCommand[GeneratedIdDone]
+object CreateUser { implicit val format: Format[CreateUser] = Json.format }
 
-case class GetUserState() extends PersistentEntity.ReplyType[UserStateDone] with UserCommand[UserStateDone]
+case class GetUserState() extends UserCommand[UserStateDone]
 
+case class GetUserProjects(skip: Int, take: Int) extends UserCommand[ProjectRefList]
+object GetUserProjects { implicit val format: Format[GetUserProjects] = Json.format }
+
+case class AddProjectRef(ref: ProjectRef) extends UserCommand[ProjectRefAdded]
+object AddProjectRef { implicit val format: Format[AddProjectRef] = Json.format }
+
+case class GetUserProject(id: UUID) extends UserCommand[ProjectRef]
+object GetUserProject { implicit val format: Format[GetUserProject] = Json.format }
 
 
 /**
-  * Akka serialization, used by both persistence and remoting, needs to have
-  * serializers registered for every type serialized or deserialized. While it's
-  * possible to use any serializer you want for Akka messages, out of the box
-  * Lagom provides support for JSON, via this registry abstraction.
-  *
-  * The serializers are registered here, and then provided to Lagom in the
-  * application loader.
+  * Serialization
   */
 object UserSerializerRegistry extends JsonSerializerRegistry {
   override def serializers: Seq[JsonSerializer[_]] = Seq(
+    JsonSerializer[GetUserProject],
+    JsonSerializer[AddProjectRef],
+    JsonSerializer[ProjectRefAdded],
+    JsonSerializer[GetUserProjects],
     JsonSerializer[GeneratedIdDone],
     JsonSerializer[CreateUser],
-    JsonSerializer[RegisterClient],
     JsonSerializer[UserStateDone],
     JsonSerializer[ClientCreated],
     JsonSerializer[UserCreated],
-    JsonSerializer[UserLogin],
-    JsonSerializer[UserLoginDone],
     JsonSerializer[UserCreated],
     JsonSerializer[User],
     JsonSerializer[Token],
