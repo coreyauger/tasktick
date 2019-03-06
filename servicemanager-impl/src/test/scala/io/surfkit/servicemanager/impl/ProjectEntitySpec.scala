@@ -84,13 +84,6 @@ class ProjectEntitySpec extends WordSpec with Matchers with BeforeAndAfterAll {
       val proj = outcome.replies.head.asInstanceOf[Project]
       assert(proj == tpUpdate)
     }
-
-    /* "allow updating the greeting message" in withTestDriver { driver =>
-       val outcome1 = driver.run(UseGreetingMessage("Hi"))
-       outcome1.events should contain only GreetingMessageChanged("Hi")
-       val outcome2 = driver.run(Hello("Alice"))
-       outcome2.replies should contain only "Hi, Alice!"
-     }*/
   }
 
 
@@ -110,7 +103,7 @@ class ProjectEntitySpec extends WordSpec with Matchers with BeforeAndAfterAll {
     "Add a Task to the project" in{
       val outcome = taskTestDriver.run(AddTask(name = task1.name, description = task1.description, section = task1.section))
       val ev = outcome.events.head.asInstanceOf[TaskAdded]
-      assert(ev.task.name == task1.name && ev.task.section ==  task1.section)
+      assert(ev.task.name == task1.name && ev.task.section == task1.section)
     }
 
     "Update the task info" in{
@@ -118,7 +111,7 @@ class ProjectEntitySpec extends WordSpec with Matchers with BeforeAndAfterAll {
       val proj = outcome.replies.head.asInstanceOf[Project]
       assert(proj.id == tp2.id)
       assert(proj.tasks.size == 1)
-      val task = task1.copy(id = proj.tasks.head._2.id)
+      val task = task1.copy(id = proj.tasks.head.id)
       val outcome2 = taskTestDriver.run(UpdateTask(
         id = task.id,
         name = task.name,
@@ -130,9 +123,8 @@ class ProjectEntitySpec extends WordSpec with Matchers with BeforeAndAfterAll {
         endDate = task.endDate,
         section = task.section
       ))
-      val now = Instant.now
       val ev = outcome2.events.head.asInstanceOf[TaskUpdated]
-      assert(ev.task.copy(lastUpdated = now) == task.copy(lastUpdated = now))
+      assert(ev.task.name == task.name && task.description == task.description)
     }
 
     "Adding another Task to the project" in{
@@ -150,7 +142,7 @@ class ProjectEntitySpec extends WordSpec with Matchers with BeforeAndAfterAll {
       val proj = outcome.replies.head.asInstanceOf[Project]
       assert(proj.id == tp2.id)
       assert(proj.tasks.size == 2)
-      val taskToDel = proj.tasks.head._2
+      val taskToDel = proj.tasks.head
       val outcome2 = taskTestDriver.run(DeleteTask(taskToDel.id))
       val outcome3 = taskTestDriver.run(GetProject(tp2.id))
       val proj2 = outcome3.replies.head.asInstanceOf[Project]
@@ -163,7 +155,7 @@ class ProjectEntitySpec extends WordSpec with Matchers with BeforeAndAfterAll {
       val proj = outcome.replies.head.asInstanceOf[Project]
       assert(proj.id == tp2.id)
       assert(proj.tasks.size == 1)
-      val task = proj.tasks.head._2
+      val task = proj.tasks.head
       val noteTxt = "Testing Note Text"
       taskTestDriver.run(AddNote(task.id, proj.owner, noteTxt))
       taskTestDriver.run(AddNote(task.id, proj.owner, noteTxt))
@@ -171,7 +163,7 @@ class ProjectEntitySpec extends WordSpec with Matchers with BeforeAndAfterAll {
       val proj2 = outcome2.replies.head.asInstanceOf[Project]
       assert(proj2.id == tp2.id)
       assert(proj2.tasks.size == 1)
-      val task2 = proj2.tasks.head._2
+      val task2 = proj2.tasks.head
       assert(task2.notes.size == 2)
       assert(task2.notes.forall(_.note == noteTxt))
     }
@@ -181,14 +173,14 @@ class ProjectEntitySpec extends WordSpec with Matchers with BeforeAndAfterAll {
       val proj = outcome.replies.head.asInstanceOf[Project]
       assert(proj.id == tp2.id)
       assert(proj.tasks.size == 1)
-      val task = proj.tasks.head._2
+      val task = proj.tasks.head
       val note = task.notes.head
       taskTestDriver.run(DeleteNote(task.id, note.id))
       val outcome2 = taskTestDriver.run(GetProject(tp2.id))
       val proj2 = outcome2.replies.head.asInstanceOf[Project]
       assert(proj2.id == tp2.id)
       assert(proj2.tasks.size == 1)
-      val task2 = proj2.tasks.head._2
+      val task2 = proj2.tasks.head
       assert(task2.notes.size == 1)
       val noteTxt = "Testing Note Text"
       assert(task2.notes.forall(_.note == noteTxt))
@@ -199,7 +191,7 @@ class ProjectEntitySpec extends WordSpec with Matchers with BeforeAndAfterAll {
       val proj = outcome.replies.head.asInstanceOf[Project]
       assert(proj.id == tp2.id)
       assert(proj.tasks.size == 1)
-      val task = proj.tasks.head._2
+      val task = proj.tasks.head
       val outcome2 = taskTestDriver.run(AddTask(name = task1.name, description = task1.description, section = task1.section, parent = Some(task1.id)))
       val ev2 = outcome2.events.head.asInstanceOf[TaskAdded]
       assert(ev2.task.name == task1.name && ev2.task.section ==  task1.section && ev2.task.parent == Some(task1.id))
@@ -226,7 +218,7 @@ object ProjectEntitySpec{
     team = testTeamId,
     description = "This is a a description of the project",
     imgUrl = Some("http://some-image.com/image.png"),
-    tasks = Map.empty[String,Task]
+    tasks = Set.empty
   )
 
   val testUserId2 = UUID.randomUUID()
@@ -239,7 +231,7 @@ object ProjectEntitySpec{
     team = testTeamId2,
     description = "Updated description",
     imgUrl = Some("http://some-image.com/image2.png"),
-    tasks = Map.empty[String,Task]
+    tasks = Set.empty
   )
 
   lazy val tp2 = Project(
@@ -249,11 +241,12 @@ object ProjectEntitySpec{
     team = testTeamId2,
     description = "Updated description",
     imgUrl = Some("http://some-image.com/image2.png"),
-    tasks = Map.empty[String,Task]
+    tasks = Set.empty
   )
 
   lazy val task1 = Task(
     id = UUID.randomUUID(),
+    project = UUID.randomUUID(),
     name = "Task 1",
     description = "Task Description",
     done = false,

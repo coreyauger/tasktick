@@ -34,7 +34,7 @@ class ServiceManagerServiceSpec extends AsyncWordSpec with Matchers with BeforeA
         imageUrl = tp.imgUrl
       )).map{ answer =>
         createdId = answer.id
-        answer should === (tp.copy(id = answer.id))
+        answer should === (tp.id == answer.id)
       }
     }
 
@@ -45,18 +45,14 @@ class ServiceManagerServiceSpec extends AsyncWordSpec with Matchers with BeforeA
         owner = tp2.owner,
         team = tp2.team,
         description = tp2.description,
-        tasks = Map.empty,
+        tasks = Set.empty,
         imgUrl = tp2.imgUrl
       )).map{ answer =>
-        answer should === (tp2.copy(id = createdId))
+        answer should === (tp2.id == createdId)
       }
     }
 
-    "get a project by an id " in {
-      client.getProject(createdId).invoke(createdId).map { answer =>
-        answer should ===  (tp2.copy(id = createdId))
-      }
-    }
+
 
     /*"allow responding with a custom message" in {
       for {
