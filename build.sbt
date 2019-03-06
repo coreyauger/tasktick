@@ -9,7 +9,7 @@ val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4" % Test
 val jwt = "com.pauldijou" %% "jwt-play-json" % "2.1.0"
 
 lazy val `tasktick` = (project in file("."))
-  .aggregate(`gateway-api`, `gateway-impl`, `gateway-stream-api`, `gateway-stream-impl`, `servicemanager-api`, `servicemanager-impl`)
+  .aggregate(`gateway-api`, `gateway-impl`, `servicemanager-api`, `servicemanager-impl`)
 
 
 
@@ -58,20 +58,3 @@ lazy val `gateway-impl` = (project in file("gateway-impl"))
   .dependsOn(`gateway-api`)
   .dependsOn(`servicemanager-api`)
 
-lazy val `gateway-stream-api` = (project in file("gateway-stream-api"))
-  .settings(
-    libraryDependencies ++= Seq(
-      lagomScaladslApi
-    )
-  )
-
-lazy val `gateway-stream-impl` = (project in file("gateway-stream-impl"))
-  .enablePlugins(LagomScala)
-  .settings(
-    libraryDependencies ++= Seq(
-      lagomScaladslTestKit,
-      macwire,
-      scalaTest
-    )
-  )
-  .dependsOn(`gateway-stream-api`, `gateway-api`)
