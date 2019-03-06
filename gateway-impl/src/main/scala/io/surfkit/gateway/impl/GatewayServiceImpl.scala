@@ -1,23 +1,18 @@
 package io.surfkit.gateway.impl
 
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Paths}
 import java.time.Instant
 import java.util.UUID
 
 import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import io.surfkit.gateway.api
 import io.surfkit.gateway.api._
 import com.lightbend.lagom.scaladsl.api.ServiceCall
-import com.lightbend.lagom.scaladsl.api.broker.Topic
-import com.lightbend.lagom.scaladsl.api.deser.MessageSerializer.NegotiatedSerializer
-import com.lightbend.lagom.scaladsl.broker.TopicProducer
-import com.lightbend.lagom.scaladsl.persistence.{EventStreamElement, PersistentEntityRegistry}
+import com.lightbend.lagom.scaladsl.persistence.PersistentEntityRegistry
 import com.lightbend.lagom.scaladsl.server.ServerServiceCall
-import com.lightbend.lagom.scaladsl.api.transport.{Forbidden, MessageProtocol, RequestHeader, ResponseHeader}
+import com.lightbend.lagom.scaladsl.api.transport.{Forbidden, RequestHeader, ResponseHeader}
 import pdi.jwt.{Jwt, JwtAlgorithm, JwtJson}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -28,7 +23,6 @@ import play.api.libs.ws.ahc.StandaloneAhcWSClient
 import play.api.libs.json._
 
 import scala.util.{Failure, Success}
-import scala.concurrent.duration._
 import scala.concurrent.Future
 
 /**
@@ -59,8 +53,8 @@ class GatewayServiceImpl(system: ActorSystem,
   override def getPwaScript = {  _  =>
     Future.successful(new String(indexJs))
   }
-  override def getPwaImage = ServerServiceCall { _ =>
-    Future.successful(Array[Byte]())
+  override def getPwaImage(img: String) = ServerServiceCall { _ =>
+    Future.successful(Files.readAllBytes( Paths.get(wwwPath + "/imgs/"+img) ))
   }
 
   override def getUser = authenticated { (tokenContent, _) =>
@@ -226,8 +220,6 @@ class GatewayServiceImpl(system: ActorSystem,
       val withAuthHeader = RequestHeader.Default.withHeader("Authorization", s"Bearer ${token}")
 
       val tokenContent = authToken(token)
-      //println(s"New Connection !!! ${tokenContent}")
-      //println(s"withAuthHeader: ${withAuthHeader}")
       //val source = Source.tick(100 milliseconds, 2 seconds, "tick").mapAsync(4){ _ =>
       val source = src.mapAsync(4) {
         case SocketEvent(_: GetUser) => getUser.invokeWithHeaders(withAuthHeader, NotUsed).map(x => SocketEvent(UserList( Seq(x._2.user) )))
@@ -239,15 +231,23 @@ class GatewayServiceImpl(system: ActorSystem,
                                               team  = x.team,
                                               description = x.description,
                                               imageUrl = x.imageUrl
-                                            )).map(x => SocketEvent(x._2))
+                                            )).map(x => SocketEvent( ProjectRefList( Seq(x._2) ) ))
         case SocketEvent(x: EditProject) => updateProject.invokeWithHeaders(withAuthHeader, UpdateProject(
                                               project = x.project
                                             )).map(x => SocketEvent(x._2))
-          // FIXME: ...
-        case SocketEvent(x: AddTask) => addProjectTask(x.project).invokeWithHeaders(withAuthHeader, x).map(x => SocketEvent(x._2))
-        case SocketEvent(x: UpdateTask) => updateProjectTask(x.project, x.task.id).invokeWithHeaders(withAuthHeader, x).map(x => SocketEvent(x._2))
+        case SocketEvent(x: NewTask) => addProjectTask(x.project).invokeWithHeaders(withAuthHeader, AddTask(
+                                              project = x.project,
+                                              name = x.name,
+                                              description = x.description,
+                                              section = x.section,
+                                              parent = x.parent
+                                            )).map(x => SocketEvent(x._2))
+        case SocketEvent(x: EditTask) => updateProjectTask(x.task.project, x.task.id).invokeWithHeaders(withAuthHeader, UpdateTask(
+                                              project = x.task.project,
+                                              task = x.task
+                                            )).map(x => SocketEvent(x._2))
         case SocketEvent(x: DeleteTask) => deleteProjectTask(x.project, x.task).invokeWithHeaders(withAuthHeader, NotUsed).map(x => SocketEvent(x._2))
-        case SocketEvent(x: AddNote) => addNote(x.project, x.task).invokeWithHeaders(withAuthHeader, x).map(x => SocketEvent(x._2))
+        case SocketEvent(x: NewNote) => addNote(x.project, x.task).invokeWithHeaders(withAuthHeader, AddNote(x.project, x.task, UUID.fromString(tokenContent.userId), x.note) ).map(x => SocketEvent(x._2))
         case SocketEvent(x: DeleteNote) => deleteNote(x.project, x.task, x.note).invokeWithHeaders(withAuthHeader, NotUsed).map(x => SocketEvent(x._2))
         case SocketEvent(_: HeartBeat) => Future.successful( SocketEvent(HeartBeat(Instant.now)) )
         case x =>

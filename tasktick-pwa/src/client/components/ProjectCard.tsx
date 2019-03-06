@@ -23,11 +23,16 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import CardActionArea from '@material-ui/core/CardActionArea';
 import { Project, Task } from '../stores/data';
+import { TextField, Button, Grid, Checkbox } from '@material-ui/core';
+import { observer } from 'mobx-react';
 
 const styles = (theme: Theme) =>
   createStyles({
     card: {
         maxWidth: 800,
+      },
+      thin:{
+        width: "75%"
       },
       media: {
         height: 0,
@@ -52,10 +57,18 @@ const styles = (theme: Theme) =>
       avatar: {
         backgroundColor: red[500],
       },
+      strike: {
+        textDecoration: "line-through",
+      },
+      button: {
+        margin: theme.spacing.unit,
+        float: "right"
+      },
   });
 
 type State = {
     expanded: boolean
+    taskName: string
 };
 
 interface Props {
@@ -66,30 +79,55 @@ interface Props {
   onProjectSelect?: (Project) => void;
 };
 
+@observer
 class ProjectCard extends React.Component<Props & WithStyles<typeof styles>, State> {
-    state = { expanded: this.props.expanded };
+    state = { expanded: this.props.expanded, taskName: "" };
+
+    componentDidMount(){
+      console.log("MOUNT PROJECT>..")
+      this.props.store.socketStore.socket.send("GetProject", {id: this.props.project.id})  
+    }
+    componentDidUpdate(prevProps){
+      if(prevProps.project.id != this.props.project.id){
+        // refresh the project..
+        console.log("REFRESH PROJECT>..")
+        this.props.store.socketStore.socket.send("GetProject", {id: this.props.project.id})        
+      }
+    }
 
     handleExpandClick = () => {
       this.setState(state => ({ expanded: !state.expanded }));
     };
     onTaskSelect = (x: Task) => {
-        console.log("onTaskSelect")
         this.props.onTaskSelect(x);
     }
     selectServiceType = () =>{
         if(this.props.project)
             this.props.onProjectSelect(this.props.project)
     }
+    updateTaskName = (event) => {
+      this.setState({ taskName: event.target.value });
+    };
+    addTask = () =>{
+      //project: UUID, name: String, description: String, section: String, parent: Option[UUID] = None
+      this.props.store.socketStore.socket.send("NewTask", {project: this.props.project.id, name: this.state.taskName, description: "", section: "Default"})  
+      this.setState({taskName: ""})
+    }
+    toggleTaskDone = (t: Task) => () =>{
+      t.done=!t.done
+      this.props.store.socketStore.socket.send("EditTask", {task: t})  
+    }
 
   render() {    
     const classes = this.props.classes 
     const sd = this.props.project
+    //console.log("Project !!!:", this.props.store.taskStore.tasks)    
     return (
         <Card className={classes.card}>          
         <CardHeader
           avatar={
             <Avatar aria-label="Service" className={classes.avatar}>
-              S
+              P
             </Avatar>
           }
           action={
@@ -103,7 +141,7 @@ class ProjectCard extends React.Component<Props & WithStyles<typeof styles>, Sta
         <CardActionArea onClick={this.selectServiceType}>
         <CardMedia
           className={classes.media}
-          image={"/imgs/"+sd.name+".png"}
+          image={"/img/bg"+sd.id[0]+".png"}
           title={sd.name}
         />
         <CardContent>
@@ -129,18 +167,24 @@ class ProjectCard extends React.Component<Props & WithStyles<typeof styles>, Sta
         </CardActions>
         <Collapse in={this.state.expanded} timeout="auto" unmountOnExit>
           <CardContent>
-            <Typography paragraph>Methods:</Typography>
-            <Typography paragraph>
-              Click on a method to trigger an event of that type:
-            </Typography>
+            <Typography paragraph>Tasks:</Typography>
+            <div>      
+                <Button color="secondary" className={classes.button} disabled={this.state.taskName == ""} onClick={this.addTask}>Add</Button>     
+                <div className={classes.thin}>                    
+                < TextField onChange={this.updateTaskName} value={this.state.taskName} autoFocus margin="dense" id="task" label="New Task" type="text" fullWidth  />
+                </div>  
+                         
+            </div>
             <div>
                 <List>
-                { sd.tasks.map(x => this.props.store.taskStore.tasks[x] ).map( (x: Task ) => (
+                {sd.tasks.map(x => this.props.store.taskStore.tasks[x] ).filter(x => x).map( (x: Task ) => (
                     <ListItem key={x.id} button={true} onClick={() => this.onTaskSelect(x) } >
-                        <ListItemText                      
-                        primary={x.name}
-                        secondary={x.section}
-                        />
+                        <Checkbox
+                            checked={x.done}
+                            tabIndex={-1}    
+                            onChange={this.toggleTaskDone(x)}                      
+                          />
+                        <ListItemText primary={x.name} secondary={x.description} className={x.done && classes.strike} />
                     </ListItem>)                
                 )}
               </List> 

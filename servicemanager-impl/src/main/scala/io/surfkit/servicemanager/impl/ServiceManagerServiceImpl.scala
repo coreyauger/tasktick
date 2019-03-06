@@ -84,11 +84,9 @@ class ServiceManagerServiceImpl(persistentEntityRegistry: PersistentEntityRegist
     ref.ask(DeleteNote(task, note)).map(_ => Done)
   }
 
-
-
-
   private def convertNote(n: Note):api.Note = api.Note(
     id = n.id,
+    task = n.task,
     user = n.user,
     note = n.note,
     date = n.date
@@ -97,6 +95,7 @@ class ServiceManagerServiceImpl(persistentEntityRegistry: PersistentEntityRegist
   private def convertTask(t: Task): api.Task = api.Task(
     id = t.id,
     name = t.name,
+    project = t.project,
     description = t.description,
     done = t.done,
     assigned = t.assigned,
@@ -114,22 +113,27 @@ class ServiceManagerServiceImpl(persistentEntityRegistry: PersistentEntityRegist
       team = p.team,
       description = p.description,
       imgUrl = p.imgUrl,
-      tasks = p.tasks.map{
-        case (key, value) => key -> convertTask(value)
-      }
+      tasks = p.tasks.map(y => convertTask(y) )
      )
 
 
-  override def projectsTopic(): Topic[api.ProjectUpdated] =
+  override def projectsTopic(): Topic[api.PublishEvents] =
     TopicProducer.singleStreamWithOffset {
       fromOffset =>
         persistentEntityRegistry.eventStream(ProjectEvent.Tag, fromOffset)
           .map(ev => (convertEvent(ev), ev.offset))
     }
 
-  private def convertEvent(helloEvent: EventStreamElement[ProjectEvent]): api.ProjectUpdated = {
-    helloEvent.event match {
-      case ProjectUpdated(p) => api.ProjectUpdated(convertProject(p))
+  private def convertEvent(ev: EventStreamElement[ProjectEvent]): api.PublishEvents = {
+    ev.event match {
+      case ProjectUpdated(p) => api.ProjectUpdated(p.id, convertProject(p))
+      case ProjectCreated(p) => api.ProjectCreated(p.id, convertProject(p))
+      case ProjectDeleted(id) => api.ProjectDeleted(id)
+      case TaskUpdated(p) => api.TaskUpdated(p.id, convertTask(p))
+      case TaskAdded(p) => api.TaskCreated(p.id, convertTask(p))
+      case TaskDeleted(id) => api.TaskDeleted(id)
+      case NoteAdded(id, n) => api.NoteAdded(id, convertNote(n))
+      case NoteDeleted(id, noteId) => api.NoteDeleted(noteId)
     }
   }
 

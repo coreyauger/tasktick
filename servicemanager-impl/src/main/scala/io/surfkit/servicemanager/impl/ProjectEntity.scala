@@ -24,7 +24,7 @@ class ProjectEntity extends PersistentEntity {
     team = UUID.randomUUID(),
     description = "",
     imgUrl = None,
-    tasks = Map.empty[String, Task]
+    tasks = Set.empty[Task]
   ), false)
 
   def updateProject(state: ProjectState, name: String, owner: UUID, team: UUID, description: String, imageUrl: Option[String]) = state.project.copy(
@@ -33,7 +33,7 @@ class ProjectEntity extends PersistentEntity {
       team = team,
       description = description,
       imgUrl = imageUrl,
-      tasks = Map.empty[String, Task]  // NOTE: that we never populate tasks here..
+      tasks = Set.empty[Task]  // NOTE: that we never populate tasks here..
     )
 
   /**
@@ -64,6 +64,7 @@ class ProjectEntity extends PersistentEntity {
             // TODO: deal with parent
             ctx.thenPersist(TaskAdded(Task(
               id = UUID.randomUUID(),
+              project = UUID.fromString(entityId),
               name = name,
               description = description,
               done =  false,
@@ -77,7 +78,7 @@ class ProjectEntity extends PersistentEntity {
             )))(ctx.reply)
         }.onCommand[UpdateTask, TaskUpdated] {
           case (UpdateTask(id, name, description, parent, done, assigned, startDate, endDate, section), ctx, state) =>
-            val task = state.project.tasks.values.find(_.id == id).map{ t =>
+            val task = state.project.tasks.find(_.id == id).map{ t =>
               t.copy(
                 id = id,
                 name = name,
@@ -94,6 +95,7 @@ class ProjectEntity extends PersistentEntity {
               Task(
                 id = id,
                 name = name,
+                project = UUID.fromString(entityId),
                 description = description,
                 done = done,
                 assigned = assigned,
@@ -112,7 +114,7 @@ class ProjectEntity extends PersistentEntity {
 
         .onCommand[AddNote, NoteAdded] {
           case (AddNote(task, user, note), ctx, state) =>
-            ctx.thenPersist(NoteAdded(task, Note(id = UUID.randomUUID(), user = user, note = note, date = Instant.now())))(ctx.reply)
+            ctx.thenPersist(NoteAdded(task, Note(id = UUID.randomUUID(), task=task, project = UUID.fromString(entityId),user = user, note = note, date = Instant.now())))(ctx.reply)
         }.onCommand[DeleteNote, NoteDeleted] {
           case (DeleteNote(task, id), ctx, state) => ctx.thenPersist(NoteDeleted(task, id))(ctx.reply)
         }
@@ -120,22 +122,22 @@ class ProjectEntity extends PersistentEntity {
         .onReadOnlyCommand[GetProject, Project] {
           case (GetProject(_), ctx, state) => ctx.reply(proj)
         }.onEvent {
-          case (ProjectCreated(project), state) => state.copy(project = project.copy(tasks = state.project.tasks), true, false) // retain the tasks..
+          case (ProjectCreated(project), state) => state.copy(project = project, true, false) // retain the tasks..
           case (ProjectUpdated(project), state) => state.copy(project = project.copy(tasks = state.project.tasks)) // retain the tasks..
           case (ProjectDeleted(_), state) => state.copy(archived = true)
 
-          case (TaskAdded(task), state) => state.copy(project = state.project.copy(tasks = state.project.tasks + (task.id.toString -> task)) )
-          case (TaskUpdated(task), state) => state.copy(project = state.project.copy(tasks = state.project.tasks + (task.id.toString -> task)) )
-          case (TaskDeleted(id), state) => state.copy(project = state.project.copy(tasks = state.project.tasks - id.toString) )
+          case (TaskAdded(task), state) => state.copy(project = state.project.copy(tasks = state.project.tasks.filterNot(_.id == task.id) + task) )
+          case (TaskUpdated(task), state) => state.copy(project = state.project.copy(tasks = state.project.tasks.filterNot(_.id == task.id) + task) )
+          case (TaskDeleted(id), state) => state.copy(project = state.project.copy(tasks = state.project.tasks.filterNot(_.id == id)) )
 
           case (NoteAdded(taskId, note), state) =>
-            state.project.tasks.get(taskId.toString).map { t =>
-              state.copy(project = state.project.copy(tasks = state.project.tasks + (t.id.toString -> t.copy(notes = t.notes :+ note))))
+            state.project.tasks.find(_.id == taskId).map { t =>
+              state.copy(project = state.project.copy(tasks = state.project.tasks + t.copy(notes = t.notes.filterNot(_.id == note.id) :+ note)))
             }.getOrElse(state)
 
           case (NoteDeleted(taskId, note), state) =>
-            state.project.tasks.get(taskId.toString).map { t =>
-              state.copy(project = state.project.copy(tasks = state.project.tasks + (t.id.toString -> t.copy(notes = t.notes.filterNot(_.id == note)))))
+            state.project.tasks.find(_.id == taskId).map { t =>
+              state.copy(project = state.project.copy(tasks = state.project.tasks + t.copy(notes = t.notes.filterNot(_.id == note))))
             }.getOrElse(state)
         }
   }
@@ -214,19 +216,20 @@ case class Project(
                team: UUID,
                description: String,
                imgUrl: Option[String],
-               tasks: Map[String,Task]
+               tasks: Set[Task]
                 )
 object Project {
   implicit val format: Format[Project] = Json.format
 }
 
-case class Note(id: UUID, user: UUID, note: String, date: Instant)
+case class Note(id: UUID, project: UUID, task: UUID, user: UUID, note: String, date: Instant)
 object Note {
   implicit val format: Format[Note] = Json.format
 }
 
 case class Task(
   id: UUID,
+  project: UUID,
   name: String,
   description: String,
   done: Boolean,

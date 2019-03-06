@@ -6,7 +6,7 @@ import akka.{Done, NotUsed}
 import com.lightbend.lagom.scaladsl.api.broker.Topic
 import com.lightbend.lagom.scaladsl.api.broker.kafka.{KafkaProperties, PartitionKeyStrategy}
 import com.lightbend.lagom.scaladsl.api.{Service, ServiceCall}
-import play.api.libs.json.{Format, Json}
+import play.api.libs.json.{Format, Json, OFormat}
 import java.util.UUID
 
 import com.lightbend.lagom.scaladsl.api.transport.Method
@@ -36,7 +36,7 @@ trait ServiceManagerService extends Service {
   /**
     * This gets published to Kafka.
     */
-  def projectsTopic(): Topic[ProjectUpdated]
+  def projectsTopic(): Topic[PublishEvents]
 
   override final def descriptor = {
     import Service._
@@ -61,7 +61,7 @@ trait ServiceManagerService extends Service {
           // name as the partition key.
           .addProperty(
             KafkaProperties.partitionKeyStrategy,
-            PartitionKeyStrategy[ProjectUpdated](_.project.id.toString)
+            PartitionKeyStrategy[PublishEvents](_.id.toString)
           )
       )
       .withAutoAcl(true)
@@ -86,6 +86,7 @@ object AddNote{implicit val format: Format[AddNote] = Json.format[AddNote] }
 
 case class Task(
                  id: UUID,
+                 project: UUID,
                  name: String,
                  description: String,
                  done: Boolean,
@@ -99,7 +100,7 @@ case class Task(
                )
 object Task {implicit val format: Format[Task] = Json.format }
 
-case class Note(id: UUID, user: UUID, note: String, date: Instant)
+case class Note(id: UUID, task: UUID, user: UUID, note: String, date: Instant)
 object Note {implicit val format: Format[Note] = Json.format}
 
 case class Project(id: UUID,
@@ -108,10 +109,36 @@ case class Project(id: UUID,
                    team: UUID,
                    description: String,
                    imgUrl: Option[String],
-                   tasks: Map[String,Task])
+                   tasks: Set[Task])
 object Project {implicit val format: Format[Project] = Json.format[Project]}
 
-case class ProjectUpdated(project: Project)
-object ProjectUpdated {
-  implicit val format: Format[ProjectUpdated] = Json.format[ProjectUpdated]
+// Published Events...
+
+sealed trait PublishEvents{
+  def id: UUID
 }
+object PublishEvents{ implicit val format: OFormat[PublishEvents] = Json.format[PublishEvents] }
+
+case class ProjectUpdated(id: UUID, project: Project) extends PublishEvents
+object ProjectUpdated { implicit val format: Format[ProjectUpdated] = Json.format[ProjectUpdated] }
+
+case class ProjectCreated(id: UUID, project: Project) extends PublishEvents
+object ProjectCreated { implicit val format: Format[ProjectCreated] = Json.format[ProjectCreated] }
+
+case class ProjectDeleted(id: UUID) extends PublishEvents
+object ProjectDeleted { implicit val format: Format[ProjectDeleted] = Json.format[ProjectDeleted] }
+
+case class TaskUpdated(id: UUID, task: Task) extends PublishEvents
+object TaskUpdated { implicit val format: Format[TaskUpdated] = Json.format[TaskUpdated] }
+
+case class TaskCreated(id: UUID, task: Task) extends PublishEvents
+object TaskCreated { implicit val format: Format[TaskCreated] = Json.format[TaskCreated] }
+
+case class TaskDeleted(id: UUID) extends PublishEvents
+object TaskDeleted { implicit val format: Format[TaskDeleted] = Json.format[TaskDeleted] }
+
+case class NoteAdded(id: UUID, note: Note) extends PublishEvents
+object NoteAdded { implicit val format: Format[NoteAdded] = Json.format[NoteAdded] }
+
+case class NoteDeleted(id: UUID) extends PublishEvents
+object NoteDeleted { implicit val format: Format[NoteDeleted] = Json.format[NoteDeleted] }

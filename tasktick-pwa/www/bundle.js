@@ -35720,18 +35720,14 @@
 	var ListItemIcon_1 = __webpack_require__(258);
 	var ListItemText_1 = __webpack_require__(260);
 	var ListSubheader_1 = __webpack_require__(262);
-	var Dashboard_1 = __webpack_require__(264);
-	var Add_1 = __webpack_require__(265);
+	var People_1 = __webpack_require__(497);
 	var BarChart_1 = __webpack_require__(266);
 	var Layers_1 = __webpack_require__(267);
 	var Assignment_1 = __webpack_require__(268);
-	var Dashboard_2 = __webpack_require__(269);
-	var core_1 = __webpack_require__(303);
 	var WebSocket_1 = __webpack_require__(273);
 	var SignIn_1 = __webpack_require__(274);
-	var core_2 = __webpack_require__(303);
 	var Projects_1 = __webpack_require__(491);
-	var data_1 = __webpack_require__(496);
+	var core_1 = __webpack_require__(303);
 	var drawerWidth = 240;
 	var styles = function (theme) {
 	    return createStyles_1.default({
@@ -35740,9 +35736,6 @@
 	        },
 	        toolbar: {
 	            paddingRight: 24,
-	        },
-	        fab: {
-	            margin: theme.spacing.unit,
 	        },
 	        toolbarIcon: __assign({ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 8px' }, theme.mixins.toolbar),
 	        appBar: {
@@ -35811,25 +35804,13 @@
 	    });
 	    var _a;
 	};
-	exports.secondaryListItems = (React.createElement("div", null,
-	    React.createElement(ListSubheader_1.default, { inset: true }, "Projects"),
-	    React.createElement(ListItem_1.default, { button: true },
-	        React.createElement(ListItemIcon_1.default, null,
-	            React.createElement(Assignment_1.default, null)),
-	        React.createElement(ListItemText_1.default, { primary: "Some Project" })),
-	    React.createElement(ListItem_1.default, { button: true },
-	        React.createElement(ListItemIcon_1.default, null,
-	            React.createElement(Assignment_1.default, null)),
-	        React.createElement(ListItemText_1.default, { primary: "Another Project" }))));
 	var App = (function (_super) {
 	    __extends(App, _super);
 	    function App(props) {
 	        var _this = _super.call(this, props) || this;
 	        _this.state = {
 	            open: true,
-	            name: "",
-	            description: "",
-	            showAddProject: false
+	            anchorEl: null
 	        };
 	        _this.handleDrawerOpen = function () {
 	            _this.setState({ open: true });
@@ -35837,27 +35818,33 @@
 	        _this.handleDrawerClose = function () {
 	            _this.setState({ open: false });
 	        };
-	        _this.showAddProject = function () {
-	            _this.setState({ showAddProject: true });
+	        _this.onSelectProject = function (id) { return function () {
+	            var _a = index_1.default.routing, location = _a.location, push = _a.push, goBack = _a.goBack;
+	            push("/p/project/" + id);
+	        }; };
+	        _this.openMenu = function (event) {
+	            _this.setState({ anchorEl: event.currentTarget });
 	        };
-	        _this.updateProjectName = function (event) {
-	            _this.setState({ name: event.target.value });
+	        _this.handleClose = function () {
+	            _this.setState({ anchorEl: null });
 	        };
-	        _this.updateProjectDescription = function (event) {
-	            _this.setState({ description: event.target.value });
-	        };
-	        _this.hideAddProject = function () {
-	            _this.setState({ showAddProject: false, name: "", description: "" });
-	        };
-	        _this.saveProject = function () {
-	            _this.props.store.socketStore.socket.send("NewProject", { name: _this.state.name, description: _this.state.description, owner: data_1.uuidv4(), team: data_1.uuidv4() });
+	        _this.handleLogout = function () {
+	            window.localStorage.clear();
+	            if (_this.props.store.socketStore.socket)
+	                _this.props.store.socketStore.socket.close();
+	            _this.props.store.clear();
+	            var _a = _this.props.store.routing, location = _a.location, push = _a.push, goBack = _a.goBack;
+	            _this.handleClose();
+	            push("/p/signin");
 	        };
 	        if (window.localStorage.getItem("authToken"))
 	            props.store.socketStore.connect(new WebSocket_1.TasktickSocket(window.localStorage.getItem("authToken")));
 	        return _this;
 	    }
 	    App.prototype.render = function () {
+	        var _this = this;
 	        console.log("APP RENDER!!");
+	        var projectList = this.props.store.projectStore.projects;
 	        var classes = this.props.classes;
 	        var _a = index_1.default.routing, location = _a.location, push = _a.push, goBack = _a.goBack;
 	        return (React.createElement(React.Fragment, null,
@@ -35867,15 +35854,19 @@
 	                    React.createElement(Toolbar_1.default, { disableGutters: !this.state.open, className: classes.toolbar },
 	                        React.createElement(IconButton_1.default, { color: "inherit", "aria-label": "Open drawer", onClick: this.handleDrawerOpen, className: classnames_1.default(classes.menuButton, this.state.open && classes.menuButtonHidden) },
 	                            React.createElement(Menu_1.default, null)),
-	                        React.createElement(Typography_1.default, { component: "h1", variant: "h6", color: "inherit", noWrap: true, className: classes.title }, "Dashboard"),
-	                        React.createElement(IconButton_1.default, { color: "inherit" },
+	                        React.createElement(Typography_1.default, { component: "h1", variant: "h6", color: "inherit", noWrap: true, className: classes.title }, "TaskTick"),
+	                        React.createElement(IconButton_1.default, { color: "inherit", onClick: this.openMenu },
 	                            React.createElement(Badge_1.default, { badgeContent: 4, color: "secondary" },
-	                                React.createElement(Notifications_1.default, null))))),
+	                                React.createElement(Notifications_1.default, null))),
+	                        React.createElement(core_1.Menu, { id: "simple-menu", anchorEl: this.state.anchorEl, open: this.state.anchorEl != null, onClose: this.handleClose },
+	                            React.createElement(core_1.MenuItem, { onClick: this.handleClose }, "Profile"),
+	                            React.createElement(core_1.MenuItem, { onClick: this.handleClose }, "My account"),
+	                            React.createElement(core_1.MenuItem, { onClick: this.handleLogout }, "Logout")))),
 	                React.createElement(Drawer_1.default, { variant: "permanent", classes: {
 	                        paper: classnames_1.default(classes.drawerPaper, !this.state.open && classes.drawerPaperClose),
 	                    }, open: this.state.open },
 	                    React.createElement("div", { className: classes.toolbarIcon },
-	                        React.createElement("img", { src: "/imgs/typebus-logo.png", alt: "logo", style: { "width": "66%" } }),
+	                        React.createElement("img", { src: "/img/logo.png", alt: "logo", style: { "width": "66%" } }),
 	                        React.createElement(IconButton_1.default, { onClick: this.handleDrawerClose },
 	                            React.createElement(ChevronLeft_1.default, null))),
 	                    React.createElement(Divider_1.default, null),
@@ -35883,35 +35874,29 @@
 	                        React.createElement("div", null,
 	                            React.createElement(ListItem_1.default, { button: true },
 	                                React.createElement(ListItemIcon_1.default, null,
-	                                    React.createElement(Dashboard_1.default, null)),
-	                                React.createElement(ListItemText_1.default, { primary: "Dashboard", onClick: function () { return push("/p/home"); } })),
-	                            React.createElement(ListItem_1.default, { button: true },
-	                                React.createElement(ListItemIcon_1.default, null,
 	                                    React.createElement(Layers_1.default, null)),
 	                                React.createElement(ListItemText_1.default, { primary: "Projects", onClick: function () { return push("/p/projects"); } })),
 	                            React.createElement(ListItem_1.default, { button: true },
 	                                React.createElement(ListItemIcon_1.default, null,
+	                                    React.createElement(People_1.default, null)),
+	                                React.createElement(ListItemText_1.default, { primary: "Users", onClick: function () { return push("/p/users"); } })),
+	                            React.createElement(ListItem_1.default, { button: true },
+	                                React.createElement(ListItemIcon_1.default, null,
 	                                    React.createElement(BarChart_1.default, null)),
-	                                React.createElement(ListItemText_1.default, { primary: "Metrics", onClick: function () { return push("/p/tests"); } })))),
+	                                React.createElement(ListItemText_1.default, { primary: "Metrics", onClick: function () { return push("/p/metrics"); } })))),
 	                    React.createElement(Divider_1.default, null),
-	                    React.createElement(List_1.default, null, exports.secondaryListItems)),
+	                    React.createElement(List_1.default, null,
+	                        React.createElement("div", null,
+	                            React.createElement(ListSubheader_1.default, { inset: true }, "Projects"),
+	                            projectList.map(function (x) { return (React.createElement(ListItem_1.default, { key: "_plis" + x.id, button: true, onClick: _this.onSelectProject(x.id) },
+	                                React.createElement(ListItemIcon_1.default, null,
+	                                    React.createElement(Assignment_1.default, null)),
+	                                React.createElement(ListItemText_1.default, { primary: x.name }))); })))),
 	                React.createElement("main", { className: classes.content },
 	                    React.createElement("div", { className: classes.appBarSpacer }),
 	                    React.createElement(react_router_1.Route, { path: '/p/signin', render: function (props) { return React.createElement(SignIn_1.default, { store: index_1.default }); } }),
-	                    React.createElement(react_router_1.Route, { path: '/p/home', render: function (props) { return React.createElement(Dashboard_2.default, { store: index_1.default }); } }),
 	                    React.createElement(react_router_1.Route, { path: '/p/project/:id', render: function (props) { return React.createElement(Projects_1.default, { store: index_1.default, project: props.id }); } }),
-	                    React.createElement(react_router_1.Route, { path: '/p/projects', render: function (props) { return React.createElement(Projects_1.default, { store: index_1.default }); } }),
-	                    React.createElement(core_2.Fab, { color: "primary", "aria-label": "Add", className: classes.fab, onClick: this.showAddProject },
-	                        React.createElement(Add_1.default, null)))),
-	            React.createElement(core_1.Dialog, { open: this.state.showAddProject, onClose: this.hideAddProject, "aria-labelledby": "form-dialog-title" },
-	                React.createElement(core_1.DialogTitle, { id: "form-dialog-title" }, "New Project"),
-	                React.createElement(core_1.DialogContent, null,
-	                    React.createElement(core_1.DialogContentText, null, "Create a new project."),
-	                    React.createElement(core_1.TextField, { onChange: this.updateProjectName, autoFocus: true, margin: "dense", id: "name", label: "Project Name", type: "text", fullWidth: true }),
-	                    React.createElement(core_1.TextField, { onChange: this.updateProjectDescription, margin: "dense", id: "description", label: "Project Description", type: "text", fullWidth: true })),
-	                React.createElement(core_1.DialogActions, null,
-	                    React.createElement(core_1.Button, { onClick: this.hideAddProject, color: "primary" }, "Cancel"),
-	                    React.createElement(core_1.Button, { onClick: this.saveProject, disabled: this.state.name == "", color: "primary" }, "Save")))));
+	                    React.createElement(react_router_1.Route, { path: '/p/projects', render: function (props) { return React.createElement(Projects_1.default, { store: index_1.default }); } })))));
 	    };
 	    App = __decorate([
 	        mobx_react_1.inject('routing'),
@@ -51397,8 +51382,14 @@
 	    function ProjectStore() {
 	        this.projects = [];
 	    }
-	    ProjectStore.prototype.addProject = function (e) {
-	        this.projects.push(e);
+	    ProjectStore.prototype.addProject = function (p) {
+	        this.projects = this.projects.filter(function (x) { return x.id != p.id; }).concat([p]);
+	    };
+	    ProjectStore.prototype.addTask = function (t) {
+	        var proj = this.projects.find(function (x) { return x.id == t.project; });
+	        if (proj) {
+	            proj.tasks = proj.tasks.filter(function (x) { return x != t.id; }).concat([t.id]);
+	        }
 	    };
 	    __decorate([
 	        mobx_1.observable
@@ -51412,35 +51403,31 @@
 	    TaskStore.prototype.addTask = function (t) {
 	        this.tasks[t.id] = t;
 	    };
+	    TaskStore.prototype.addNote = function (n) {
+	        var t = this.tasks[n.task];
+	        if (t) {
+	            t.notes = t.notes.filter(function (x) { return x.id != n.id; }).concat([n]);
+	        }
+	    };
 	    __decorate([
 	        mobx_1.observable
 	    ], TaskStore.prototype, "tasks", void 0);
 	    return TaskStore;
 	}());
-	var NoteStore = (function () {
-	    function NoteStore() {
-	        this.notes = {};
-	    }
-	    NoteStore.prototype.addTask = function (n) {
-	        this.notes[n.id] = n;
-	    };
-	    __decorate([
-	        mobx_1.observable
-	    ], NoteStore.prototype, "notes", void 0);
-	    return NoteStore;
-	}());
 	var socketStore = new SocketStore();
 	var taskStore = new TaskStore();
 	var projectStore = new ProjectStore();
-	var noteStore = new NoteStore();
 	var userStore = new UserStore();
 	var stores = {
 	    routing: routingStore,
 	    socketStore: socketStore,
 	    taskStore: taskStore,
 	    projectStore: projectStore,
-	    noteStore: noteStore,
-	    userStore: userStore
+	    userStore: userStore,
+	    clear: function () {
+	        taskStore.tasks = {};
+	        projectStore.projects = [];
+	    }
 	};
 	exports.default = stores;
 
@@ -52301,32 +52288,7 @@
 	exports.default = _default;
 
 /***/ },
-/* 264 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	
-	var _interopRequireDefault = __webpack_require__(64);
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	exports.default = void 0;
-	
-	var _react = _interopRequireDefault(__webpack_require__(1));
-	
-	var _createSvgIcon = _interopRequireDefault(__webpack_require__(238));
-	
-	var _default = (0, _createSvgIcon.default)(_react.default.createElement(_react.default.Fragment, null, _react.default.createElement("path", {
-	  fill: "none",
-	  d: "M0 0h24v24H0z"
-	}), _react.default.createElement("path", {
-	  d: "M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"
-	})), 'Dashboard');
-	
-	exports.default = _default;
-
-/***/ },
+/* 264 */,
 /* 265 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -52431,76 +52393,7 @@
 	exports.default = _default;
 
 /***/ },
-/* 269 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	var __extends = (this && this.__extends) || (function () {
-	    var extendStatics = Object.setPrototypeOf ||
-	        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-	        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-	    return function (d, b) {
-	        extendStatics(d, b);
-	        function __() { this.constructor = d; }
-	        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-	    };
-	})();
-	var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-	    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-	    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-	    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-	    return c > 3 && r && Object.defineProperty(target, key, r), r;
-	};
-	Object.defineProperty(exports, "__esModule", { value: true });
-	var React = __webpack_require__(1);
-	var mobx_react_1 = __webpack_require__(16);
-	var createStyles_1 = __webpack_require__(165);
-	var withStyles_1 = __webpack_require__(63);
-	var Paper_1 = __webpack_require__(206);
-	var Grid_1 = __webpack_require__(270);
-	var withRoot_1 = __webpack_require__(252);
-	var styles = function (theme) {
-	    return createStyles_1.default({
-	        root: {},
-	        tableContainer: {
-	            height: 320,
-	        },
-	        paper: {
-	            padding: 0,
-	            textAlign: 'center',
-	            color: theme.palette.text.secondary,
-	        },
-	    });
-	};
-	;
-	var Dashboard = (function (_super) {
-	    __extends(Dashboard, _super);
-	    function Dashboard() {
-	        var _this = _super !== null && _super.apply(this, arguments) || this;
-	        _this.state = {
-	            selectedTrace: undefined,
-	            selectedTraces: []
-	        };
-	        return _this;
-	    }
-	    Dashboard.prototype.render = function () {
-	        var classes = this.props.classes;
-	        return (React.createElement("div", { className: this.props.classes.root },
-	            React.createElement(Grid_1.default, { container: true, spacing: 24 },
-	                React.createElement(Grid_1.default, { item: true, xs: 12 },
-	                    React.createElement(Paper_1.default, { className: classes.paper })),
-	                React.createElement(Grid_1.default, { item: true, xs: 6 }, "TODO"),
-	                React.createElement(Grid_1.default, { item: true, xs: 6 }, "TODO"))));
-	    };
-	    Dashboard = __decorate([
-	        mobx_react_1.observer
-	    ], Dashboard);
-	    return Dashboard;
-	}(React.Component));
-	exports.default = withRoot_1.default(withStyles_1.default(styles)(Dashboard));
-
-
-/***/ },
+/* 269 */,
 /* 270 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -53034,8 +52927,9 @@
 	                tasks: x.tasks.map(function (y) { return y.id; })
 	            };
 	            stores_1.default.projectStore.addProject(project);
-	            var tasks = x.tasks.map(function (y) {
-	                console.log("task", y);
+	            x.tasks.forEach(function (y) {
+	                stores_1.default.taskStore.addTask(y);
+	                stores_1.default.projectStore.addTask(y);
 	            });
 	        });
 	    },
@@ -53057,22 +52951,17 @@
 	            stores_1.default.userStore.addUser(x);
 	        });
 	    },
-	};
-	var toArrayBuffer = function (blob) {
-	    return new Promise(function (resolve) {
-	        var arrayBuffer;
-	        var fileReader = new FileReader();
-	        fileReader.onload = function (event) {
-	            return __awaiter(this, void 0, void 0, function () {
-	                return __generator(this, function (_a) {
-	                    arrayBuffer = event.target.result;
-	                    resolve(new Uint8Array(arrayBuffer));
-	                    return [2];
-	                });
-	            });
-	        };
-	        fileReader.readAsArrayBuffer(blob);
-	    });
+	    "io.surfkit.gateway.api.TaskList": function (e) {
+	        e.payload.tasks.forEach(function (x) {
+	            stores_1.default.taskStore.addTask(x);
+	            stores_1.default.projectStore.addTask(x);
+	        });
+	    },
+	    "io.surfkit.gateway.api.NoteList": function (e) {
+	        e.payload.notes.forEach(function (x) {
+	            stores_1.default.taskStore.addNote(x);
+	        });
+	    },
 	};
 	var TasktickSocket = (function () {
 	    function TasktickSocket(token) {
@@ -53080,6 +52969,10 @@
 	        this.ws = null;
 	        this.cancelable = null;
 	        this.queue = [];
+	        this.close = function () {
+	            if (_this.ws)
+	                _this.ws.close();
+	        };
 	        this.mkSocketEvent = function (eventType, payload) { return ({
 	            payload: __assign({}, payload, { _type: "io.surfkit.gateway.api." + eventType })
 	        }); };
@@ -53191,7 +53084,6 @@
 	var React = __webpack_require__(1);
 	var Avatar_1 = __webpack_require__(275);
 	var Button_1 = __webpack_require__(277);
-	var CssBaseline_1 = __webpack_require__(159);
 	var FormControl_1 = __webpack_require__(279);
 	var FormControlLabel_1 = __webpack_require__(283);
 	var Checkbox_1 = __webpack_require__(286);
@@ -53203,7 +53095,7 @@
 	var createStyles_1 = __webpack_require__(165);
 	var withStyles_1 = __webpack_require__(63);
 	var withRoot_1 = __webpack_require__(252);
-	var core_1 = __webpack_require__(303);
+	var WebSocket_1 = __webpack_require__(273);
 	var styles = function (theme) {
 	    return createStyles_1.default({
 	        layout: (_a = {
@@ -53219,14 +53111,15 @@
 	            },
 	            _a),
 	        whiteout: {
-	            position: "static",
+	            position: "fixed",
 	            left: 0,
 	            right: 0,
 	            top: 0,
 	            bottom: 0,
 	            width: "100%",
 	            height: "100%",
-	            color: "white"
+	            backgroundColor: "white",
+	            zIndex: 5000,
 	        },
 	        paper: {
 	            marginTop: theme.spacing.unit * 8,
@@ -53243,6 +53136,9 @@
 	            width: '100%',
 	            marginTop: theme.spacing.unit,
 	        },
+	        button: {
+	            margin: theme.spacing.unit,
+	        },
 	        submit: {
 	            marginTop: theme.spacing.unit * 3,
 	        },
@@ -53257,9 +53153,9 @@
 	        _this.state = { name: "", email: "", password: "", mode: "login" };
 	        _this.doSignIn = function (event) {
 	            var userAction = function () { return __awaiter(_this, void 0, void 0, function () {
-	                var response, json;
-	                return __generator(this, function (_a) {
-	                    switch (_a.label) {
+	                var response, json, _a, location, push, goBack;
+	                return __generator(this, function (_b) {
+	                    switch (_b.label) {
 	                        case 0: return [4, fetch('/api/user/login', {
 	                                method: 'POST',
 	                                body: JSON.stringify({ email: this.state.email, password: this.state.password }),
@@ -53268,13 +53164,16 @@
 	                                }
 	                            })];
 	                        case 1:
-	                            response = _a.sent();
+	                            response = _b.sent();
 	                            return [4, response.json()];
 	                        case 2:
-	                            json = _a.sent();
+	                            json = _b.sent();
 	                            console.log("ret", json);
 	                            window.localStorage.setItem('authToken', json.authToken);
 	                            window.localStorage.setItem('refreshToken', json.refreshToken);
+	                            this.props.store.socketStore.connect(new WebSocket_1.TasktickSocket(window.localStorage.getItem("authToken")));
+	                            _a = this.props.store.routing, location = _a.location, push = _a.push, goBack = _a.goBack;
+	                            push("/p/projects");
 	                            return [2];
 	                    }
 	                });
@@ -53284,9 +53183,9 @@
 	        };
 	        _this.doRegister = function (event) {
 	            var userAction = function () { return __awaiter(_this, void 0, void 0, function () {
-	                var response, json;
-	                return __generator(this, function (_a) {
-	                    switch (_a.label) {
+	                var response, json, _a, location, push, goBack;
+	                return __generator(this, function (_b) {
+	                    switch (_b.label) {
 	                        case 0: return [4, fetch('/api/user/register', {
 	                                method: 'POST',
 	                                body: JSON.stringify({ email: this.state.email, password: this.state.password, firstName: this.state.name, lastName: this.state.name }),
@@ -53295,13 +53194,16 @@
 	                                }
 	                            })];
 	                        case 1:
-	                            response = _a.sent();
+	                            response = _b.sent();
 	                            return [4, response.json()];
 	                        case 2:
-	                            json = _a.sent();
+	                            json = _b.sent();
 	                            console.log("ret", json);
 	                            window.localStorage.setItem('authToken', json.authToken);
 	                            window.localStorage.setItem('refreshToken', json.refreshToken);
+	                            this.setState({ mode: "login" });
+	                            _a = this.props.store.routing, location = _a.location, push = _a.push, goBack = _a.goBack;
+	                            push("/p/projects");
 	                            return [2];
 	                    }
 	                });
@@ -53319,51 +53221,49 @@
 	            _this.setState({ name: event.target.value });
 	        };
 	        _this.setMode = function (mode) { return function () {
-	            _this.setState({ mode: "register" });
+	            _this.setState({ mode: mode });
 	        }; };
 	        return _this;
 	    }
 	    SignIn.prototype.render = function () {
 	        var classes = this.props.classes;
-	        return (React.createElement(React.Fragment, null,
-	            React.createElement(CssBaseline_1.default, null),
-	            React.createElement("div", { className: classes.whiteout },
-	                React.createElement("main", { className: classes.layout }, this.state.mode == "login" ?
+	        return (React.createElement("div", { className: classes.whiteout },
+	            React.createElement("main", { className: classes.layout }, this.state.mode == "login" ?
+	                React.createElement(Paper_1.default, { className: classes.paper },
+	                    React.createElement(Avatar_1.default, { className: classes.avatar },
+	                        React.createElement(LockOutlined_1.default, null)),
+	                    React.createElement(Typography_1.default, { component: "h1", variant: "h5" }, "Sign in"),
+	                    React.createElement("form", { className: classes.form },
+	                        React.createElement(FormControl_1.default, { margin: "normal", required: true, fullWidth: true },
+	                            React.createElement(InputLabel_1.default, { htmlFor: "email" }, "Email Address"),
+	                            React.createElement(Input_1.default, { id: "email", name: "email", autoComplete: "email", autoFocus: true, onChange: this.handleEmailChange })),
+	                        React.createElement(FormControl_1.default, { margin: "normal", required: true, fullWidth: true },
+	                            React.createElement(InputLabel_1.default, { htmlFor: "password" }, "Password"),
+	                            React.createElement(Input_1.default, { name: "password", type: "password", id: "password", autoComplete: "current-password", onChange: this.handlePasswordChange })),
+	                        React.createElement(FormControlLabel_1.default, { control: React.createElement(Checkbox_1.default, { value: "remember", color: "primary" }), label: "Remember me" }),
+	                        React.createElement(Button_1.default, { type: "submit", fullWidth: true, variant: "contained", color: "primary", className: classes.submit, onClick: this.doSignIn }, "Sign in")),
+	                    React.createElement(Button_1.default, { color: "secondary", className: classes.button, onClick: this.setMode('register') }, "Or Register a new account."))
+	                :
 	                    React.createElement(Paper_1.default, { className: classes.paper },
 	                        React.createElement(Avatar_1.default, { className: classes.avatar },
 	                            React.createElement(LockOutlined_1.default, null)),
-	                        React.createElement(Typography_1.default, { component: "h1", variant: "h5" }, "Sign in"),
+	                        React.createElement(Typography_1.default, { component: "h1", variant: "h5" }, "Register"),
 	                        React.createElement("form", { className: classes.form },
+	                            React.createElement(FormControl_1.default, { margin: "normal", required: true, fullWidth: true },
+	                                React.createElement(InputLabel_1.default, { htmlFor: "email" }, "Full Name"),
+	                                React.createElement(Input_1.default, { id: "name", name: "name", autoComplete: "name", autoFocus: true, onChange: this.handleNameChange })),
 	                            React.createElement(FormControl_1.default, { margin: "normal", required: true, fullWidth: true },
 	                                React.createElement(InputLabel_1.default, { htmlFor: "email" }, "Email Address"),
 	                                React.createElement(Input_1.default, { id: "email", name: "email", autoComplete: "email", autoFocus: true, onChange: this.handleEmailChange })),
 	                            React.createElement(FormControl_1.default, { margin: "normal", required: true, fullWidth: true },
 	                                React.createElement(InputLabel_1.default, { htmlFor: "password" }, "Password"),
 	                                React.createElement(Input_1.default, { name: "password", type: "password", id: "password", autoComplete: "current-password", onChange: this.handlePasswordChange })),
+	                            React.createElement(FormControl_1.default, { margin: "normal", required: true, fullWidth: true },
+	                                React.createElement(InputLabel_1.default, { htmlFor: "password" }, "Confirm"),
+	                                React.createElement(Input_1.default, { name: "password2", type: "password", id: "password2", autoComplete: "current-password" })),
 	                            React.createElement(FormControlLabel_1.default, { control: React.createElement(Checkbox_1.default, { value: "remember", color: "primary" }), label: "Remember me" }),
-	                            React.createElement(Button_1.default, { type: "submit", fullWidth: true, variant: "contained", color: "primary", className: classes.submit, onClick: this.doSignIn }, "Sign in")),
-	                        React.createElement(core_1.Link, { onClick: this.setMode('register') }, "Or Register a new account."))
-	                    :
-	                        React.createElement(Paper_1.default, { className: classes.paper },
-	                            React.createElement(Avatar_1.default, { className: classes.avatar },
-	                                React.createElement(LockOutlined_1.default, null)),
-	                            React.createElement(Typography_1.default, { component: "h1", variant: "h5" }, "Register"),
-	                            React.createElement("form", { className: classes.form },
-	                                React.createElement(FormControl_1.default, { margin: "normal", required: true, fullWidth: true },
-	                                    React.createElement(InputLabel_1.default, { htmlFor: "email" }, "Full Name"),
-	                                    React.createElement(Input_1.default, { id: "name", name: "name", autoComplete: "name", autoFocus: true, onChange: this.handleNameChange })),
-	                                React.createElement(FormControl_1.default, { margin: "normal", required: true, fullWidth: true },
-	                                    React.createElement(InputLabel_1.default, { htmlFor: "email" }, "Email Address"),
-	                                    React.createElement(Input_1.default, { id: "email", name: "email", autoComplete: "email", autoFocus: true, onChange: this.handleEmailChange })),
-	                                React.createElement(FormControl_1.default, { margin: "normal", required: true, fullWidth: true },
-	                                    React.createElement(InputLabel_1.default, { htmlFor: "password" }, "Password"),
-	                                    React.createElement(Input_1.default, { name: "password", type: "password", id: "password", autoComplete: "current-password", onChange: this.handlePasswordChange })),
-	                                React.createElement(FormControl_1.default, { margin: "normal", required: true, fullWidth: true },
-	                                    React.createElement(InputLabel_1.default, { htmlFor: "password" }, "Confirm"),
-	                                    React.createElement(Input_1.default, { name: "password2", type: "password2", id: "password2", autoComplete: "current-password" })),
-	                                React.createElement(FormControlLabel_1.default, { control: React.createElement(Checkbox_1.default, { value: "remember", color: "primary" }), label: "Remember me" }),
-	                                React.createElement(Button_1.default, { type: "submit", fullWidth: true, variant: "contained", color: "primary", className: classes.submit, onClick: this.doRegister }, "Register")),
-	                            React.createElement(core_1.Link, { onClick: this.setMode('login') }, "Or Sign In."))))));
+	                            React.createElement(Button_1.default, { type: "submit", fullWidth: true, variant: "contained", color: "primary", className: classes.submit, onClick: this.doRegister }, "Register")),
+	                        React.createElement(Button_1.default, { color: "secondary", className: classes.button, onClick: this.setMode('login') }, "Or Sign In.")))));
 	    };
 	    return SignIn;
 	}(React.Component));
@@ -80705,6 +80605,11 @@
 	var Grid_1 = __webpack_require__(270);
 	var withRoot_1 = __webpack_require__(252);
 	var ProjectCard_1 = __webpack_require__(492);
+	var data_1 = __webpack_require__(496);
+	var TaskCard_1 = __webpack_require__(498);
+	var core_1 = __webpack_require__(303);
+	var Add_1 = __webpack_require__(265);
+	var core_2 = __webpack_require__(303);
 	var styles = function (theme) {
 	    return createStyles_1.default({
 	        root: {},
@@ -80716,6 +80621,12 @@
 	            textAlign: 'center',
 	            color: theme.palette.text.secondary,
 	        },
+	        fab: {
+	            margin: theme.spacing.unit,
+	            position: "absolute",
+	            right: 0,
+	            bottom: 0,
+	        },
 	    });
 	};
 	;
@@ -80725,6 +80636,9 @@
 	        var _this = _super !== null && _super.apply(this, arguments) || this;
 	        _this.state = {
 	            task: undefined,
+	            name: "",
+	            description: "",
+	            showAddProject: false
 	        };
 	        _this.onTaskSelect = function (task) {
 	            _this.setState(__assign({}, _this.state, { task: task }));
@@ -80734,7 +80648,24 @@
 	        };
 	        _this.onProjectSelect = function (project) {
 	            var _a = _this.props.store.routing, location = _a.location, push = _a.push, goBack = _a.goBack;
+	            _this.setState({ task: undefined });
 	            push('/p/project/' + project.id);
+	        };
+	        _this.showAddProject = function () {
+	            _this.setState({ showAddProject: true });
+	        };
+	        _this.updateProjectName = function (event) {
+	            _this.setState({ name: event.target.value });
+	        };
+	        _this.updateProjectDescription = function (event) {
+	            _this.setState({ description: event.target.value });
+	        };
+	        _this.hideAddProject = function () {
+	            _this.setState({ showAddProject: false, name: "", description: "" });
+	        };
+	        _this.saveProject = function () {
+	            _this.props.store.socketStore.socket.send("NewProject", { name: _this.state.name, description: _this.state.description, owner: data_1.uuidv4(), team: data_1.uuidv4() });
+	            _this.hideAddProject();
 	        };
 	        return _this;
 	    }
@@ -80743,16 +80674,31 @@
 	        var _a = this.props.store.routing, location = _a.location, push = _a.push, goBack = _a.goBack;
 	        var pathname = location.pathname.split('/');
 	        var selectedProject = this.props.project ? this.props.project : (pathname.length == 4) ? pathname[3] : undefined;
-	        console.log("project", this.props.project);
 	        var projectList = this.props.store.projectStore.projects;
 	        var selectProject = this.props.store.projectStore.projects.find(function (x) { return x.id == selectedProject; });
-	        console.log(selectProject);
+	        if (this.state.task && selectProject.id != this.state.task.project) {
+	            this.setState({ task: undefined });
+	        }
 	        var classes = this.props.classes;
-	        return (React.createElement("div", { className: this.props.classes.root }, selectProject ? (React.createElement(Grid_1.default, { container: true, spacing: 24 },
-	            React.createElement(Grid_1.default, { item: true, xs: 4, key: selectProject.id },
-	                React.createElement(ProjectCard_1.default, { store: this.props.store, project: selectProject, onTaskSelect: this.onTaskSelect, expanded: true })),
-	            React.createElement(Grid_1.default, { item: true, xs: 8, key: "taskStream" }))) : (React.createElement(Grid_1.default, { container: true, spacing: 24 }, projectList.map(function (x) { return React.createElement(Grid_1.default, { item: true, xs: 4, key: x.id },
-	            React.createElement(ProjectCard_1.default, { project: x, store: _this.props.store, onTaskSelect: _this.onTaskSelect, onProjectSelect: _this.onProjectSelect })); })))));
+	        return (React.createElement("div", { className: this.props.classes.root },
+	            selectProject ? (React.createElement(Grid_1.default, { container: true, spacing: 24 },
+	                React.createElement(Grid_1.default, { item: true, xs: 4, key: "sel" + selectProject.id },
+	                    React.createElement(ProjectCard_1.default, { store: this.props.store, project: selectProject, onTaskSelect: this.onTaskSelect, expanded: true })),
+	                React.createElement(Grid_1.default, { item: true, xs: 8, key: "taskStream" }, this.state.task ?
+	                    React.createElement(TaskCard_1.default, { store: this.props.store, task: this.state.task })
+	                    : null))) : (React.createElement(Grid_1.default, { container: true, spacing: 24 }, projectList.map(function (x) { return React.createElement(Grid_1.default, { item: true, xs: 4, key: "_pro_" + x.id },
+	                React.createElement(ProjectCard_1.default, { project: x, store: _this.props.store, onTaskSelect: _this.onTaskSelect, onProjectSelect: _this.onProjectSelect })); }))),
+	            React.createElement(core_2.Fab, { color: "primary", "aria-label": "Add", className: classes.fab, onClick: this.showAddProject },
+	                React.createElement(Add_1.default, null)),
+	            React.createElement(core_1.Dialog, { open: this.state.showAddProject, onClose: this.hideAddProject, "aria-labelledby": "form-dialog-title" },
+	                React.createElement(core_1.DialogTitle, { id: "form-dialog-title" }, "New Project"),
+	                React.createElement(core_1.DialogContent, null,
+	                    React.createElement(core_1.DialogContentText, null, "Create a new project."),
+	                    React.createElement(core_1.TextField, { onChange: this.updateProjectName, autoFocus: true, margin: "dense", id: "name", label: "Project Name", type: "text", fullWidth: true }),
+	                    React.createElement(core_1.TextField, { onChange: this.updateProjectDescription, margin: "dense", id: "description", label: "Project Description", type: "text", fullWidth: true })),
+	                React.createElement(core_1.DialogActions, null,
+	                    React.createElement(core_1.Button, { onClick: this.hideAddProject, color: "primary" }, "Cancel"),
+	                    React.createElement(core_1.Button, { onClick: this.saveProject, disabled: this.state.name == "", color: "primary" }, "Save")))));
 	    };
 	    Projects = __decorate([
 	        mobx_react_1.observer
@@ -80777,6 +80723,12 @@
 	        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	    };
 	})();
+	var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+	    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+	    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+	    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+	    return c > 3 && r && Object.defineProperty(target, key, r), r;
+	};
 	Object.defineProperty(exports, "__esModule", { value: true });
 	var React = __webpack_require__(1);
 	var classnames_1 = __webpack_require__(62);
@@ -80800,10 +80752,15 @@
 	var ListItem_1 = __webpack_require__(255);
 	var ListItemText_1 = __webpack_require__(260);
 	var CardActionArea_1 = __webpack_require__(326);
+	var core_1 = __webpack_require__(303);
+	var mobx_react_1 = __webpack_require__(16);
 	var styles = function (theme) {
 	    return createStyles_1.default({
 	        card: {
 	            maxWidth: 800,
+	        },
+	        thin: {
+	            width: "75%"
 	        },
 	        media: {
 	            height: 0,
@@ -80829,6 +80786,13 @@
 	        avatar: {
 	            backgroundColor: red_1.default[500],
 	        },
+	        strike: {
+	            textDecoration: "line-through",
+	        },
+	        button: {
+	            margin: theme.spacing.unit,
+	            float: "right"
+	        },
 	    });
 	    var _a;
 	};
@@ -80837,29 +80801,49 @@
 	    __extends(ProjectCard, _super);
 	    function ProjectCard() {
 	        var _this = _super !== null && _super.apply(this, arguments) || this;
-	        _this.state = { expanded: _this.props.expanded };
+	        _this.state = { expanded: _this.props.expanded, taskName: "" };
 	        _this.handleExpandClick = function () {
 	            _this.setState(function (state) { return ({ expanded: !state.expanded }); });
 	        };
 	        _this.onTaskSelect = function (x) {
-	            console.log("onTaskSelect");
 	            _this.props.onTaskSelect(x);
 	        };
 	        _this.selectServiceType = function () {
 	            if (_this.props.project)
 	                _this.props.onProjectSelect(_this.props.project);
 	        };
+	        _this.updateTaskName = function (event) {
+	            _this.setState({ taskName: event.target.value });
+	        };
+	        _this.addTask = function () {
+	            _this.props.store.socketStore.socket.send("NewTask", { project: _this.props.project.id, name: _this.state.taskName, description: "", section: "Default" });
+	            _this.setState({ taskName: "" });
+	        };
+	        _this.toggleTaskDone = function (t) { return function () {
+	            t.done = !t.done;
+	            _this.props.store.socketStore.socket.send("EditTask", { task: t });
+	        }; };
 	        return _this;
 	    }
+	    ProjectCard.prototype.componentDidMount = function () {
+	        console.log("MOUNT PROJECT>..");
+	        this.props.store.socketStore.socket.send("GetProject", { id: this.props.project.id });
+	    };
+	    ProjectCard.prototype.componentDidUpdate = function (prevProps) {
+	        if (prevProps.project.id != this.props.project.id) {
+	            console.log("REFRESH PROJECT>..");
+	            this.props.store.socketStore.socket.send("GetProject", { id: this.props.project.id });
+	        }
+	    };
 	    ProjectCard.prototype.render = function () {
 	        var _this = this;
 	        var classes = this.props.classes;
 	        var sd = this.props.project;
 	        return (React.createElement(Card_1.default, { className: classes.card },
-	            React.createElement(CardHeader_1.default, { avatar: React.createElement(Avatar_1.default, { "aria-label": "Service", className: classes.avatar }, "S"), action: React.createElement(IconButton_1.default, null,
+	            React.createElement(CardHeader_1.default, { avatar: React.createElement(Avatar_1.default, { "aria-label": "Service", className: classes.avatar }, "P"), action: React.createElement(IconButton_1.default, null,
 	                    React.createElement(MoreVert_1.default, null)), title: sd.name, subheader: sd.description }),
 	            React.createElement(CardActionArea_1.default, { onClick: this.selectServiceType },
-	                React.createElement(CardMedia_1.default, { className: classes.media, image: "/imgs/" + sd.name + ".png", title: sd.name }),
+	                React.createElement(CardMedia_1.default, { className: classes.media, image: "/img/bg" + sd.id[0] + ".png", title: sd.name }),
 	                React.createElement(CardContent_1.default, null,
 	                    React.createElement(Typography_1.default, { component: "p" }, sd.description))),
 	            React.createElement(CardActions_1.default, { className: classes.actions, disableActionSpacing: true },
@@ -80871,13 +80855,20 @@
 	                    React.createElement(ExpandMore_1.default, null))),
 	            React.createElement(Collapse_1.default, { in: this.state.expanded, timeout: "auto", unmountOnExit: true },
 	                React.createElement(CardContent_1.default, null,
-	                    React.createElement(Typography_1.default, { paragraph: true }, "Methods:"),
-	                    React.createElement(Typography_1.default, { paragraph: true }, "Click on a method to trigger an event of that type:"),
+	                    React.createElement(Typography_1.default, { paragraph: true }, "Tasks:"),
 	                    React.createElement("div", null,
-	                        React.createElement(List_1.default, null, sd.tasks.map(function (x) { return _this.props.store.taskStore.tasks[x]; }).map(function (x) { return (React.createElement(ListItem_1.default, { key: x.id, button: true, onClick: function () { return _this.onTaskSelect(x); } },
-	                            React.createElement(ListItemText_1.default, { primary: x.name, secondary: x.section }))); })))))));
+	                        React.createElement(core_1.Button, { color: "secondary", className: classes.button, disabled: this.state.taskName == "", onClick: this.addTask }, "Add"),
+	                        React.createElement("div", { className: classes.thin },
+	                            React.createElement(core_1.TextField, { onChange: this.updateTaskName, value: this.state.taskName, autoFocus: true, margin: "dense", id: "task", label: "New Task", type: "text", fullWidth: true }))),
+	                    React.createElement("div", null,
+	                        React.createElement(List_1.default, null, sd.tasks.map(function (x) { return _this.props.store.taskStore.tasks[x]; }).filter(function (x) { return x; }).map(function (x) { return (React.createElement(ListItem_1.default, { key: x.id, button: true, onClick: function () { return _this.onTaskSelect(x); } },
+	                            React.createElement(core_1.Checkbox, { checked: x.done, tabIndex: -1, onChange: _this.toggleTaskDone(x) }),
+	                            React.createElement(ListItemText_1.default, { primary: x.name, secondary: x.description, className: x.done && classes.strike }))); })))))));
 	        var _a;
 	    };
+	    ProjectCard = __decorate([
+	        mobx_react_1.observer
+	    ], ProjectCard);
 	    return ProjectCard;
 	}(React.Component));
 	exports.default = withRoot_1.default(withStyles_1.default(styles)(ProjectCard));
@@ -80976,8 +80967,199 @@
 	        return v.toString(16);
 	    });
 	};
-	exports.Serializers = {};
-	exports.SerializerMappings = {};
+
+
+/***/ },
+/* 497 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	var _interopRequireDefault = __webpack_require__(64);
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = void 0;
+	
+	var _react = _interopRequireDefault(__webpack_require__(1));
+	
+	var _createSvgIcon = _interopRequireDefault(__webpack_require__(238));
+	
+	var _default = (0, _createSvgIcon.default)(_react.default.createElement(_react.default.Fragment, null, _react.default.createElement("path", {
+	  fill: "none",
+	  d: "M0 0h24v24H0z"
+	}), _react.default.createElement("path", {
+	  d: "M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
+	})), 'People');
+	
+	exports.default = _default;
+
+/***/ },
+/* 498 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var __extends = (this && this.__extends) || (function () {
+	    var extendStatics = Object.setPrototypeOf ||
+	        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+	        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+	    return function (d, b) {
+	        extendStatics(d, b);
+	        function __() { this.constructor = d; }
+	        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+	    };
+	})();
+	var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+	    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+	    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+	    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+	    return c > 3 && r && Object.defineProperty(target, key, r), r;
+	};
+	Object.defineProperty(exports, "__esModule", { value: true });
+	var React = __webpack_require__(1);
+	var createStyles_1 = __webpack_require__(165);
+	var withStyles_1 = __webpack_require__(63);
+	var withRoot_1 = __webpack_require__(252);
+	var Card_1 = __webpack_require__(324);
+	var CardHeader_1 = __webpack_require__(332);
+	var CardContent_1 = __webpack_require__(330);
+	var Avatar_1 = __webpack_require__(275);
+	var Typography_1 = __webpack_require__(215);
+	var red_1 = __webpack_require__(146);
+	var List_1 = __webpack_require__(212);
+	var ListItem_1 = __webpack_require__(255);
+	var ListItemText_1 = __webpack_require__(260);
+	var core_1 = __webpack_require__(303);
+	var mobx_react_1 = __webpack_require__(16);
+	var styles = function (theme) {
+	    return createStyles_1.default({
+	        card: {
+	            maxWidth: 800,
+	        },
+	        media: {
+	            height: 0,
+	            paddingTop: '56.25%',
+	        },
+	        actions: {
+	            display: 'flex',
+	        },
+	        textField: {
+	            marginLeft: theme.spacing.unit,
+	            marginRight: theme.spacing.unit,
+	            width: 200,
+	        },
+	        expand: (_a = {
+	                transform: 'rotate(0deg)',
+	                transition: theme.transitions.create('transform', {
+	                    duration: theme.transitions.duration.shortest,
+	                }),
+	                marginLeft: 'auto'
+	            },
+	            _a[theme.breakpoints.up('sm')] = {
+	                marginRight: -8,
+	            },
+	            _a),
+	        expandOpen: {
+	            transform: 'rotate(180deg)',
+	        },
+	        avatar: {
+	            backgroundColor: red_1.default[500],
+	        },
+	        slim: {
+	            width: "75%"
+	        },
+	        button: {
+	            margin: theme.spacing.unit,
+	            float: "right"
+	        },
+	    });
+	    var _a;
+	};
+	;
+	var TaskCard = (function (_super) {
+	    __extends(TaskCard, _super);
+	    function TaskCard() {
+	        var _this = _super !== null && _super.apply(this, arguments) || this;
+	        _this.state = { name: _this.props.task.name, note: "", description: _this.props.task.description, startDate: _this.props.task.startDate, endDate: _this.props.task.endDate };
+	        _this.updateTaskName = function (event) {
+	            _this.setState({ name: event.target.value });
+	        };
+	        _this.updateEndDate = function (event) {
+	            var time = new Date(event.target.value).getTime();
+	            _this.setState({ endDate: time });
+	        };
+	        _this.updateStartDate = function (event) {
+	            var time = new Date(event.target.value).getTime();
+	            _this.setState({ startDate: time });
+	        };
+	        _this.updateTaskDescription = function (event) {
+	            _this.setState({ description: event.target.value });
+	        };
+	        _this.updateNoteName = function (event) {
+	            _this.setState({ note: event.target.value });
+	        };
+	        _this.toggleTaskDone = function (t) { return function () {
+	            t.done = !t.done;
+	            _this.updateTask(t);
+	        }; };
+	        _this.addNote = function () {
+	            _this.props.store.socketStore.socket.send("NewNote", { task: _this.props.task.id, project: _this.props.task.project, note: _this.state.note });
+	            _this.setState({ note: "" });
+	        };
+	        _this.updateTask = function (t) {
+	            _this.props.store.socketStore.socket.send("EditTask", { task: t });
+	        };
+	        _this.saveTask = function () {
+	            var t = _this.props.task;
+	            t.name = _this.state.name;
+	            t.description = _this.state.description;
+	            t.endDate = _this.state.endDate;
+	            t.startDate = _this.state.startDate;
+	            console.log("T", t);
+	            _this.updateTask(t);
+	        };
+	        return _this;
+	    }
+	    TaskCard.prototype.componentDidUpdate = function (prevProps) {
+	        if (prevProps.task.id != this.props.task.id) {
+	            this.setState({ name: this.props.task.name, note: "", description: this.props.task.description, startDate: this.props.task.startDate, endDate: this.props.task.endDate });
+	        }
+	    };
+	    TaskCard.prototype.render = function () {
+	        var classes = this.props.classes;
+	        var sd = this.props.task;
+	        return (React.createElement(Card_1.default, { className: classes.card },
+	            React.createElement(CardHeader_1.default, { avatar: React.createElement(Avatar_1.default, { "aria-label": "Service", className: classes.avatar }, "T"), action: React.createElement(core_1.Checkbox, { checked: sd.done, tabIndex: -1, onChange: this.toggleTaskDone(sd) }), title: sd.name, subheader: sd.description }),
+	            React.createElement(CardContent_1.default, null,
+	                React.createElement(Typography_1.default, { component: "p" }, sd.description)),
+	            React.createElement(CardContent_1.default, null,
+	                React.createElement("div", null,
+	                    React.createElement(core_1.TextField, { onChange: this.updateTaskName, value: this.state.name, autoFocus: true, margin: "dense", id: "task", label: "Task", type: "text", fullWidth: true }),
+	                    React.createElement(core_1.TextField, { onChange: this.updateTaskDescription, value: this.state.description, margin: "dense", id: "task", label: "Description", type: "text", fullWidth: true }),
+	                    React.createElement(core_1.TextField, { id: "date-start", label: "Start Date", type: "date", value: this.state.startDate ? new Date(this.state.startDate).toDateString() : undefined, className: classes.textField, InputLabelProps: {
+	                            shrink: true,
+	                        } }),
+	                    React.createElement(core_1.TextField, { id: "date-end", label: "End Date", type: "date", value: this.state.endDate ? new Date(this.state.startDate).toDateString() : undefined, onChange: this.updateEndDate, className: classes.textField, InputLabelProps: {
+	                            shrink: true,
+	                        } })),
+	                React.createElement("div", null,
+	                    React.createElement(Typography_1.default, { paragraph: true }, "Notes:"),
+	                    React.createElement("div", null,
+	                        React.createElement(core_1.Button, { color: "secondary", className: classes.button, disabled: this.state.note == "", onClick: this.addNote }, "Add"),
+	                        React.createElement("div", { className: classes.slim },
+	                            React.createElement(core_1.TextField, { onChange: this.updateNoteName, value: this.state.note, margin: "dense", id: "note", label: "New Note", type: "text", fullWidth: true }))),
+	                    React.createElement(List_1.default, null, sd.notes.filter(function (x) { return x; }).map(function (x) { return (React.createElement(ListItem_1.default, { key: x.id, button: true },
+	                        React.createElement(ListItemText_1.default, { primary: x.note, secondary: x.date }))); }))),
+	                React.createElement("div", null,
+	                    React.createElement(core_1.Button, { color: "secondary", className: classes.button, onClick: this.saveTask }, "Save")))));
+	    };
+	    TaskCard = __decorate([
+	        mobx_react_1.observer
+	    ], TaskCard);
+	    return TaskCard;
+	}(React.Component));
+	exports.default = withRoot_1.default(withStyles_1.default(styles)(TaskCard));
 
 
 /***/ }

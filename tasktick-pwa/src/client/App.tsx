@@ -24,19 +24,16 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 import ListSubheader from '@material-ui/core/ListSubheader';
-import DashboardIcon from '@material-ui/icons/Dashboard';
 import PeopleIcon from '@material-ui/icons/People';
-import AddIcon from '@material-ui/icons/Add';
 import BarChartIcon from '@material-ui/icons/BarChart';
 import LayersIcon from '@material-ui/icons/Layers';
 import AssignmentIcon from '@material-ui/icons/Assignment';
-import Dashboard from './pages/Dashboard';
-import { Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Button } from '@material-ui/core';
+
 import {TasktickSocket} from './socket/WebSocket'
 import SignIn from './pages/SignIn';
-import { Fab } from '@material-ui/core';
 import Projects from './pages/Projects';
-import { uuidv4 } from './stores/data';
+import { uuidv4, Project } from './stores/data';
+import { Menu, MenuItem } from '@material-ui/core';
 
 
 
@@ -49,10 +46,7 @@ createStyles({
   },
   toolbar: {
     paddingRight: 24, // keep right padding when drawer closed
-  },
-  fab: {
-    margin: theme.spacing.unit,
-  },
+  },  
   toolbarIcon: {
     display: 'flex',
     alignItems: 'center',
@@ -124,30 +118,9 @@ createStyles({
   }
 });
 
-export const secondaryListItems = (
-  <div>
-    <ListSubheader inset>Projects</ListSubheader>
-    <ListItem button>
-      <ListItemIcon>
-        <AssignmentIcon />
-      </ListItemIcon>
-      <ListItemText primary="Some Project" />
-    </ListItem>
-    <ListItem button>
-      <ListItemIcon>
-        <AssignmentIcon />
-      </ListItemIcon>
-      <ListItemText primary="Another Project" />
-    </ListItem>
-  </div>
-);
-
-
 type State = {
   open: boolean;
-  name: string;
-  description: string;
-  showAddProject: boolean;
+  anchorEl: any;
 };
 
 type Props = {
@@ -158,10 +131,8 @@ type Props = {
 @observer
 class App extends React.Component<Props & WithStyles<typeof styles>, State> {
   state = {
-    open: true,
-    name: "",
-    description: "",
-    showAddProject: false
+    open: true,   
+    anchorEl: null
   };
   constructor(props){    
     super(props);
@@ -175,26 +146,32 @@ class App extends React.Component<Props & WithStyles<typeof styles>, State> {
 
   handleDrawerClose = () => {
     this.setState({ open: false });
-  };
-  showAddProject = () =>{
-    this.setState({showAddProject:true})
+  }; 
+  onSelectProject = (id) => () =>{
+    const { location, push, goBack } = stores.routing; // CA - inject above did not work.. you should see this as a "prop" (investigate)
+    push("/p/project/"+id)
   }
-  updateProjectName = (event) => {
-    this.setState({ name: event.target.value });
+
+  openMenu = event => {
+    this.setState({ anchorEl: event.currentTarget });
   };
-  updateProjectDescription = (event) => {
-    this.setState({ description: event.target.value });
+
+  handleClose = () => {
+    this.setState({ anchorEl: null });
   };
-  hideAddProject = () =>{
-    this.setState({showAddProject:false, name: "", description: ""})
-  }
-  saveProject = () => {
-    // this is a hack right now to send 'uuidv4()' so that we have a value to serialize to a UUID (note owner is replaced service side anyways)
-    this.props.store.socketStore.socket.send("NewProject", {name: this.state.name, description: this.state.description, owner: uuidv4(), team: uuidv4()})  
+  handleLogout = () =>{
+    window.localStorage.clear();
+    if(this.props.store.socketStore.socket)
+      this.props.store.socketStore.socket.close()
+    this.props.store.clear()
+    const { location, push, goBack } = this.props.store.routing; // CA - inject above did not work.. you should see this as a "prop" (investigate)
+    this.handleClose();
+    push("/p/signin")
   }
 
   render() {
     console.log("APP RENDER!!")
+    const projectList = this.props.store.projectStore.projects
     const { classes } = this.props;    
     const { location, push, goBack } = stores.routing; // CA - inject above did not work.. you should see this as a "prop" (investigate)
     return (
@@ -226,13 +203,23 @@ class App extends React.Component<Props & WithStyles<typeof styles>, State> {
                 noWrap
                 className={classes.title}
               >
-                Dashboard
+                TaskTick
               </Typography>
-              <IconButton color="inherit">
+              <IconButton color="inherit" onClick={this.openMenu}>
                 <Badge badgeContent={4} color="secondary">
                   <NotificationsIcon />
-                </Badge>
+                </Badge>               
               </IconButton>
+              <Menu
+                  id="simple-menu"
+                  anchorEl={this.state.anchorEl}
+                  open={this.state.anchorEl != null}
+                  onClose={this.handleClose}
+                >
+                  <MenuItem onClick={this.handleClose}>Profile</MenuItem>
+                  <MenuItem onClick={this.handleClose}>My account</MenuItem>
+                  <MenuItem onClick={this.handleLogout}>Logout</MenuItem>
+                </Menu>
             </Toolbar>
           </AppBar>
           <Drawer
@@ -242,7 +229,7 @@ class App extends React.Component<Props & WithStyles<typeof styles>, State> {
             }}
             open={this.state.open}>
             <div className={classes.toolbarIcon}>
-              <img src="/imgs/typebus-logo.png" alt="logo" style={ {"width":"66%"} } />            
+              <img src="/img/logo.png" alt="logo" style={ {"width":"66%"} } />            
               
               <IconButton onClick={this.handleDrawerClose}>
                 <ChevronLeftIcon />
@@ -250,13 +237,7 @@ class App extends React.Component<Props & WithStyles<typeof styles>, State> {
             </div>
             <Divider />
            <List>
-           <div>
-            <ListItem button>
-              <ListItemIcon>
-                <DashboardIcon />
-              </ListItemIcon>
-              <ListItemText primary="Dashboard" onClick={() => push("/p/home")} />
-            </ListItem>                        
+           <div>                                 
             <ListItem button>
               <ListItemIcon>
                 <LayersIcon />
@@ -265,47 +246,44 @@ class App extends React.Component<Props & WithStyles<typeof styles>, State> {
             </ListItem>
             <ListItem button>
               <ListItemIcon>
+                <PeopleIcon />
+              </ListItemIcon>
+              <ListItemText primary="Users" onClick={() => push("/p/users")} />
+            </ListItem>            
+            <ListItem button>
+              <ListItemIcon>
                 <BarChartIcon />
               </ListItemIcon>
-              <ListItemText primary="Metrics" onClick={() => push("/p/tests")} />
+              <ListItemText primary="Metrics" onClick={() => push("/p/metrics")} />
             </ListItem>
           </div>
            </List>
             <Divider />
-            <List>{secondaryListItems}</List> 
+            <List>
+              <div>
+                <ListSubheader inset>Projects</ListSubheader>
+                {projectList.map(x => (
+                  <ListItem key={"_plis"+x.id} button onClick={this.onSelectProject(x.id)}>
+                  <ListItemIcon>
+                    <AssignmentIcon />
+                  </ListItemIcon>
+                  <ListItemText primary={x.name} />
+                </ListItem>
+                ))}   
+              </div>  
+            </List> 
           </Drawer>
           <main className={classes.content}>
             <div className={classes.appBarSpacer} />
 
-
-            <Route path='/p/signin' render={(props) => <SignIn store={stores} /> }  />
-            <Route path='/p/home' render={(props) => <Dashboard store={stores} /> }  />
+            <Route path='/p/signin' render={(props) => <SignIn store={stores} /> }  />            
             <Route path='/p/project/:id' render={(props) => <Projects store={stores} project={props.id} /> }  />
-            <Route path='/p/projects' render={(props) => <Projects store={stores} /> }  />                        
-
-            <Fab color="primary" aria-label="Add" className={classes.fab} onClick={this.showAddProject} >
-              <AddIcon />
-            </Fab>
+            <Route path='/p/projects' render={(props) => <Projects store={stores} /> }  />        
+                
+            
           </main>
         </div>
-        <Dialog
-          open={this.state.showAddProject}
-          onClose={this.hideAddProject}
-          aria-labelledby="form-dialog-title"
-        >
-          <DialogTitle id="form-dialog-title">New Project</DialogTitle>
-          <DialogContent>
-            <DialogContentText>
-              Create a new project.
-            </DialogContentText>
-            <TextField onChange={this.updateProjectName} autoFocus margin="dense" id="name" label="Project Name" type="text" fullWidth  />
-            <TextField onChange={this.updateProjectDescription} margin="dense" id="description" label="Project Description" type="text" fullWidth />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={this.hideAddProject} color="primary">Cancel</Button>
-            <Button onClick={this.saveProject} disabled={this.state.name == ""} color="primary">Save</Button>
-          </DialogActions>
-        </Dialog>
+        
       </React.Fragment>
     );
   }

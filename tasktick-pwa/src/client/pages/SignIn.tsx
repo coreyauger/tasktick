@@ -15,6 +15,8 @@ import createStyles from '@material-ui/core/styles/createStyles';
 import withStyles, { WithStyles } from '@material-ui/core/styles/withStyles';
 import withRoot from '../withRoot';
 import { Link } from '@material-ui/core';
+import zIndex from '@material-ui/core/styles/zIndex';
+import { TasktickSocket } from '../socket/WebSocket';
 
 const styles = (theme: Theme) =>
 createStyles({
@@ -30,14 +32,15 @@ createStyles({
     },
   },
   whiteout: {
-    position: "static",
+    position: "fixed",
     left: 0,
     right: 0,
     top: 0,
     bottom: 0,
     width: "100%",
     height: "100%",
-    color: "white"
+    backgroundColor: "white",
+    zIndex: 5000,
   },
   paper: {
     marginTop: theme.spacing.unit * 8,
@@ -53,6 +56,9 @@ createStyles({
   form: {
     width: '100%', // Fix IE 11 issue.
     marginTop: theme.spacing.unit,
+  },
+  button: {
+    margin: theme.spacing.unit,    
   },
   submit: {
     marginTop: theme.spacing.unit * 3,
@@ -73,8 +79,6 @@ interface Props {
 class SignIn extends React.Component<Props & WithStyles<typeof styles>, State> {
   state = { name: "", email: "", password: "", mode: "login" };
 
-
-  
   doSignIn = (event) => {   
     const userAction = async () => {
       const response = await fetch('/api/user/login', {
@@ -88,7 +92,9 @@ class SignIn extends React.Component<Props & WithStyles<typeof styles>, State> {
       console.log("ret", json)
       window.localStorage.setItem('authToken', json.authToken)
       window.localStorage.setItem('refreshToken', json.refreshToken)
-      // do something with myJson
+      this.props.store.socketStore.connect(new TasktickSocket(window.localStorage.getItem("authToken")))    
+      const { location, push, goBack } = this.props.store.routing; // CA - inject above did not work.. you should see this as a "prop" (investigate)
+      push("/p/projects")
     }
     userAction()
     event.preventDefault();    
@@ -106,6 +112,9 @@ class SignIn extends React.Component<Props & WithStyles<typeof styles>, State> {
       console.log("ret", json)
       window.localStorage.setItem('authToken', json.authToken)
       window.localStorage.setItem('refreshToken', json.refreshToken)      
+      this.setState({mode: "login"})
+      const { location, push, goBack } = this.props.store.routing; // CA - inject above did not work.. you should see this as a "prop" (investigate)
+      push("/p/projects")
     }
     userAction()
     event.preventDefault();    
@@ -120,15 +129,13 @@ class SignIn extends React.Component<Props & WithStyles<typeof styles>, State> {
     this.setState({ name: event.target.value });
   };
   setMode = (mode: string) => () => {
-    this.setState({mode: "register"})
+    this.setState({mode})
   }
 
   render() {  
     const  classes = this.props.classes;
     return (
-      <React.Fragment>
-        <CssBaseline />
-        <div className={classes.whiteout}>
+       <div className={classes.whiteout}>
         <main className={classes.layout}>
           {this.state.mode == "login" ?
           <Paper className={classes.paper}>
@@ -164,7 +171,7 @@ class SignIn extends React.Component<Props & WithStyles<typeof styles>, State> {
                 Sign in
               </Button>              
             </form>
-            <Link onClick={this.setMode('register')}>Or Register a new account.</Link>
+            <Button color="secondary" className={classes.button} onClick={this.setMode('register')}>Or Register a new account.</Button>               
           </Paper>
           :
           <Paper className={classes.paper}>
@@ -196,7 +203,7 @@ class SignIn extends React.Component<Props & WithStyles<typeof styles>, State> {
                 <InputLabel htmlFor="password">Confirm</InputLabel>
                 <Input
                   name="password2"
-                  type="password2"
+                  type="password"
                   id="password2"
                   autoComplete="current-password"
                 />
@@ -213,12 +220,11 @@ class SignIn extends React.Component<Props & WithStyles<typeof styles>, State> {
                 Register
               </Button>              
             </form>
-            <Link onClick={this.setMode('login')}>Or Sign In.</Link>
+            <Button color="secondary" className={classes.button} onClick={this.setMode('login')}>Or Sign In.</Button>            
           </Paper>
           }
         </main>
         </div>
-      </React.Fragment>
     );
   }
 }

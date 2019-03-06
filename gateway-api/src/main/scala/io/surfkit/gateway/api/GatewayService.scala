@@ -24,7 +24,7 @@ trait GatewayService extends Service {
   def getPwaIndex: ServiceCall[NotUsed, String]
   def getPwaScript: ServiceCall[NotUsed, String]
   //def getPwaStatic = ServiceCall[NotUsed, Any]
-  def getPwaImage: ServiceCall[NotUsed, Array[Byte]]
+  def getPwaImage(img:String): ServiceCall[NotUsed, Array[Byte]]
 
   def registerUser: ServiceCall[RegisterUser, GeneratedIdDone]
   def loginUser: ServiceCall[UserLogin, UserLoginDone]
@@ -60,11 +60,16 @@ trait GatewayService extends Service {
         pathCall("/p/:rest", getPwaIndex _)(
           MessageSerializer.NotUsedMessageSerializer,
           new ContentTypeSerializer()),
+        pathCall("/p/project/:rest", getPwaIndex _)(
+          MessageSerializer.NotUsedMessageSerializer,
+          new ContentTypeSerializer()),
         pathCall("/bundle.js", getPwaScript _)(
           MessageSerializer.NotUsedMessageSerializer,
           new ContentTypeSerializer("text/javascript")),
         //pathCall("/static/:rest", getPwaStatic),
-        //pathCall("/img/:rest", getPwaImage _),
+        pathCall("/img/:rest", getPwaImage _)(
+          MessageSerializer.NotUsedMessageSerializer,
+          new ImageSerializer("image/png")),
 
         restCall(Method.POST, "/api/user/register", registerUser _),
         restCall(Method.POST, "/api/user/login", loginUser _),
@@ -94,13 +99,31 @@ trait GatewayService extends Service {
 class ContentTypeSerializer(contentType: String = "text/html") extends StrictMessageSerializer[String] {
   final private val serializer = {
     new NegotiatedSerializer[String, ByteString]() {
-      override val protocol = MessageProtocol(Some("text/html"), Some("utf-8"))
+      override val protocol = MessageProtocol(Some(contentType), Some("utf-8"))
       def serialize(s: String) = ByteString.fromString(s, "utf-8")
     }
   }
   final private val deserializer = {
     new NegotiatedDeserializer[String, ByteString] {
       override def deserialize(bytes: ByteString) = bytes.toString()
+    }
+  }
+
+  override def serializerForRequest = serializer
+  override def deserializer(protocol: MessageProtocol) = deserializer
+  override def serializerForResponse(acceptedMessageProtocols: scala.collection.immutable.Seq[MessageProtocol]) = serializer
+}
+
+class ImageSerializer(contentType: String = "image/png") extends StrictMessageSerializer[Array[Byte]] {
+  final private val serializer = {
+    new NegotiatedSerializer[Array[Byte], ByteString]() {
+      override val protocol = MessageProtocol(Some(contentType))
+      def serialize(s: Array[Byte]) = ByteString.fromArray( s )
+    }
+  }
+  final private val deserializer = {
+    new NegotiatedDeserializer[Array[Byte], ByteString] {
+      override def deserialize(bytes: ByteString) = bytes.toArray[Byte]
     }
   }
 
@@ -141,6 +164,12 @@ object EditProject{implicit val format: Format[EditProject] = Json.format[EditPr
 case class ProjectList(projects: Seq[Project]) extends SocketApi
 object ProjectList { implicit val format: Format[ProjectList] = Json.format[ProjectList] }
 
+case class NewTask(project: UUID, name: String, description: String, section: String, parent: Option[UUID] = None) extends SocketApi
+object NewTask { implicit val format: Format[NewTask] = Json.format[NewTask] }
+
+case class EditTask(task: Task) extends SocketApi
+object EditTask{implicit val format: Format[EditTask] = Json.format[EditTask]}
+
 case class TaskList(tasks: Seq[Task]) extends SocketApi
 object TaskList { implicit val format: Format[TaskList] = Json.format[TaskList] }
 
@@ -167,6 +196,9 @@ object Deleted { implicit val format: Format[Deleted] = Json.format[Deleted] }
 
 case class GetUser(ts: Instant) extends SocketApi
 object GetUser { implicit val format: Format[GetUser] = Json.format[GetUser] }
+
+case class NewNote(project: UUID, task: UUID, note: String) extends SocketApi
+object NewNote { implicit val format: Format[NewNote] = Json.format[NewNote] }
 
 /**
   *  Identity

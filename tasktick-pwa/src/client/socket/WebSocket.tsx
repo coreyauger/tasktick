@@ -1,4 +1,4 @@
-import {SocketEvent, toDateTime, Serializers, SerializerMappings, Project, User} from '../stores/data';
+import {SocketEvent, toDateTime, Project, User, Task, Note} from '../stores/data';
 import stores from '../stores'
 
 const WS_OPEN = 1
@@ -16,11 +16,12 @@ const typeMap = {
                 tasks: x.tasks.map(y => y.id)
             }
             stores.projectStore.addProject(project) 
-            const tasks = x.tasks.map(y => {
-                console.log("task", y)
+            x.tasks.forEach(y => {
+                stores.taskStore.addTask(y as Task)      
+                stores.projectStore.addTask(y as Task)    
             })
         })      
-    },
+    },    
     "io.surfkit.gateway.api.ProjectRefList" : (e: SocketEvent) =>{        
         e.payload.projects.forEach( x => {
             const project: Project = {
@@ -39,23 +40,20 @@ const typeMap = {
             stores.userStore.addUser(x as User)           
         })
     },
-}
- 
-
-const toArrayBuffer = (blob: Blob): Promise<Uint8Array> => {
-    return new Promise(resolve => {
-        let arrayBuffer;
-        const fileReader = new FileReader();
-        fileReader.onload = async function(event: any) {        
-            arrayBuffer = event.target.result;
-            resolve(new Uint8Array(arrayBuffer));
-        };
-        fileReader.readAsArrayBuffer(blob);
-    });
+    "io.surfkit.gateway.api.TaskList" : (e: SocketEvent) =>{        
+        e.payload.tasks.forEach( x => {            
+            stores.taskStore.addTask(x as Task)      
+            stores.projectStore.addTask(x as Task)     
+        })
+    },
+    "io.surfkit.gateway.api.NoteList" : (e: SocketEvent) =>{        
+        e.payload.notes.forEach( x => {            
+            stores.taskStore.addNote(x as Note)   
+        })
+    },
 }
 
 /*
-
 RECEIVED: {"payload":{"msg":"pong","_type":"io.surfkit.gateway.api.Test"}}
 */
 
@@ -110,6 +108,10 @@ export class TasktickSocket{
             console.log("SEND EVENT: " + eventType, socketEvent)
             this.ws.send(JSON.stringify(socketEvent))
         }
+    }
+    close = () =>{
+        if(this.ws)
+            this.ws.close();
     }
 
     mkSocketEvent = (eventType: string, payload: any) => (

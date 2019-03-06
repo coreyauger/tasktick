@@ -23,11 +23,14 @@ export interface Note{
     user: uuid, 
     note: string, 
     date: number
+    project: uuid
+    task: uuid
 }
 
 export interface Task{
     id: uuid;
-    name: string;
+    project: uuid;
+    name: string; 
     description: string,
     done: boolean,
     assigned?: uuid,
@@ -36,7 +39,7 @@ export interface Task{
     lastUpdated: number,
     section: string,
     parent?: uuid,
-    notes: uuid[]
+    notes: Note[]
 }
 
 export interface Project{
@@ -61,12 +64,3 @@ export const uuidv4 = () => {
       return v.toString(16);
     });
   }
-
-// TODO: CA - we want a way to fetch these schema at runtime.
-export const Serializers = {    
- //   serviceExceptionType: avro.Type.forSchema({"type":"record","name":"ServiceException","namespace":"io.surfkit.typebus.event","fields":[{"name":"message","type":"string"},{"name":"stackTrace","type":{"type":"array","items":"string"}},{"name":"extra","type":{"type":"map","values":"string"},"default":{}}]}),    
-}
-
-export const SerializerMappings = {
-    //"io.surfkit.typebus.event.package.ServiceException": Serializers.serviceExceptionType,    
-}

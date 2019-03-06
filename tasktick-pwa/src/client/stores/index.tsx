@@ -25,9 +25,15 @@ class UserStore {
 class ProjectStore {
 	@observable projects: Project[] = [];    
     constructor() {}
-	addProject(e: Project) {
-		this.projects.push(e);
-	}
+	addProject(p: Project) {        
+        this.projects = [...this.projects.filter(x => x.id != p.id), p];
+    }
+    addTask(t: Task){
+        const proj = this.projects.find( x => x.id == t.project)
+        if(proj){
+            proj.tasks = [...proj.tasks.filter(x => x != t.id), t.id]
+        }
+    }
 } 
 
 class TaskStore{
@@ -35,12 +41,11 @@ class TaskStore{
     addTask(t: Task) {
         this.tasks[t.id] = t
     }
-}
-
-class NoteStore{
-    @observable notes: { [id:string]:Note } = {};    
-    addTask(n: Note) {
-        this.notes[n.id] = n
+    addNote(n: Note){
+        const t = this.tasks[n.task]
+        if(t){
+            t.notes = [...t.notes.filter(x => x.id != n.id), n]
+        }
     }
 }
 
@@ -48,16 +53,18 @@ class NoteStore{
 const socketStore = new SocketStore();
 const taskStore = new TaskStore();
 const projectStore = new ProjectStore();
-const noteStore = new NoteStore();
 const userStore = new UserStore();
 
 const stores = {
     routing: routingStore,
     socketStore,
     taskStore,
-    projectStore,
-    noteStore,    
-    userStore
+    projectStore,    
+    userStore,
+    clear(){
+        taskStore.tasks = {}
+        projectStore.projects = []
+    }
 } 
 
 export default stores;
