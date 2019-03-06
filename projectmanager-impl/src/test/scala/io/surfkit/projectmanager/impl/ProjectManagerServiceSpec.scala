@@ -1,13 +1,13 @@
-package io.surfkit.servicemanager.impl
+package io.surfkit.projectmanager.impl
 
 import java.util.UUID
 
 import com.lightbend.lagom.scaladsl.server.LocalServiceLocator
 import com.lightbend.lagom.scaladsl.testkit.ServiceTest
 import org.scalatest.{AsyncWordSpec, BeforeAndAfterAll, Matchers}
-import io.surfkit.servicemanager.api._
+import io.surfkit.projectmanager.api._
 
-class ServiceManagerServiceSpec extends AsyncWordSpec with Matchers with BeforeAndAfterAll {
+class ProjectManagerServiceSpec extends AsyncWordSpec with Matchers with BeforeAndAfterAll {
 
   private val server = ServiceTest.startServer(
     ServiceTest.defaultSetup
@@ -52,15 +52,5 @@ class ServiceManagerServiceSpec extends AsyncWordSpec with Matchers with BeforeA
       }
     }
 
-
-
-    /*"allow responding with a custom message" in {
-      for {
-        _ <- client.useGreeting("Bob").invoke(GreetingMessage("Hi"))
-        answer <- client.hello("Bob").invoke()
-      } yield {
-        answer should ===("Hi, Bob!")
-      }
-    }*/
   }
 }

@@ -1,4 +1,4 @@
-package io.surfkit.servicemanager.api
+package io.surfkit.projectmanager.api
 
 import java.time.Instant
 
@@ -21,7 +21,7 @@ object ServiceManagerService  {
   * This describes everything that Lagom needs to know about how to serve and
   * consume the ServiceManagerService.
   */
-trait ServiceManagerService extends Service {
+trait ProjectManagerService extends Service {
 
   def getProject(id: UUID): ServiceCall[NotUsed, Project]
   def createProject: ServiceCall[CreateProject, Project]

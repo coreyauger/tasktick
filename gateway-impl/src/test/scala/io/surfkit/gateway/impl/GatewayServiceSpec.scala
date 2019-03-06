@@ -8,7 +8,7 @@ import com.lightbend.lagom.scaladsl.server.LocalServiceLocator
 import com.lightbend.lagom.scaladsl.testkit.ServiceTest
 import org.scalatest.{AsyncWordSpec, BeforeAndAfterAll, Matchers}
 import io.surfkit.gateway.api._
-import io.surfkit.servicemanager.api.CreateProject
+import io.surfkit.projectmanager.api.CreateProject
 
 import scala.util.Try
 

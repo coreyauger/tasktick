@@ -10,7 +10,7 @@ import io.surfkit.gateway.api.GatewayService
 import com.lightbend.lagom.scaladsl.broker.kafka.LagomKafkaComponents
 import com.lightbend.lagom.scaladsl.playjson.JsonSerializerRegistry
 import com.softwaremill.macwire._
-import io.surfkit.servicemanager.api.ServiceManagerService
+import io.surfkit.projectmanager.api.ProjectManagerService
 
 class GatewayLoader extends LagomApplicationLoader {
 
@@ -31,7 +31,7 @@ abstract class GatewayApplication(context: LagomApplicationContext)
     with LagomKafkaComponents
     with AhcWSComponents {
 
-  lazy val projectService = serviceClient.implement[ServiceManagerService]
+  lazy val projectService = serviceClient.implement[ProjectManagerService]
 
   // Bind the service that this server provides
   override lazy val lagomServer: LagomServer = serverFor[GatewayService](wire[GatewayServiceImpl])

@@ -13,7 +13,7 @@ import com.lightbend.lagom.scaladsl.api.deser.MessageSerializer.{NegotiatedDeser
 import com.lightbend.lagom.scaladsl.api.transport.{MessageProtocol, Method}
 import com.lightbend.lagom.scaladsl.api.{Descriptor, Service, ServiceCall}
 import play.api.libs.json.{Format, Json, OFormat}
-import io.surfkit.servicemanager.api._
+import io.surfkit.projectmanager.api._
 
 object GatewayService  {
   val TOPIC_NAME = "gateway"

@@ -1,4 +1,4 @@
-package io.surfkit.servicemanager.impl
+package io.surfkit.projectmanager.impl
 
 import java.time.Instant
 import java.util.UUID

@@ -9,18 +9,18 @@ val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4" % Test
 val jwt = "com.pauldijou" %% "jwt-play-json" % "2.1.0"
 
 lazy val `tasktick` = (project in file("."))
-  .aggregate(`gateway-api`, `gateway-impl`, `servicemanager-api`, `servicemanager-impl`)
+  .aggregate(`gateway-api`, `gateway-impl`, `projectmanager-api`, `projectmanager-impl`)
 
 
 
-lazy val `servicemanager-api` = (project in file("servicemanager-api"))
+lazy val `projectmanager-api` = (project in file("projectmanager-api"))
   .settings(
     libraryDependencies ++= Seq(
       lagomScaladslApi
     )
   )
 
-lazy val `servicemanager-impl` = (project in file("servicemanager-impl"))
+lazy val `projectmanager-impl` = (project in file("projectmanager-impl"))
   .enablePlugins(LagomScala)
   .settings(
     libraryDependencies ++= Seq(
@@ -32,7 +32,7 @@ lazy val `servicemanager-impl` = (project in file("servicemanager-impl"))
     )
   )
   .settings(lagomForkedTestSettings: _*)
-  .dependsOn(`servicemanager-api`)
+  .dependsOn(`projectmanager-api`)
 
 
 lazy val `gateway-api` = (project in file("gateway-api"))
@@ -40,7 +40,7 @@ lazy val `gateway-api` = (project in file("gateway-api"))
     libraryDependencies ++= Seq(
       lagomScaladslApi
     )
-  ).dependsOn(`servicemanager-api`)
+  ).dependsOn(`projectmanager-api`)
 
 lazy val `gateway-impl` = (project in file("gateway-impl"))
   .enablePlugins(LagomScala)
@@ -56,5 +56,5 @@ lazy val `gateway-impl` = (project in file("gateway-impl"))
   )
   .settings(lagomForkedTestSettings: _*)
   .dependsOn(`gateway-api`)
-  .dependsOn(`servicemanager-api`)
+  .dependsOn(`projectmanager-api`)
 

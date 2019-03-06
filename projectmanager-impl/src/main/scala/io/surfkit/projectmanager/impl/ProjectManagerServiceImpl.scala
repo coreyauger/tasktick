@@ -1,7 +1,7 @@
-package io.surfkit.servicemanager.impl
+package io.surfkit.projectmanager.impl
 
-import io.surfkit.servicemanager.api
-import io.surfkit.servicemanager.api.ServiceManagerService
+import io.surfkit.projectmanager.api
+import io.surfkit.projectmanager.api.ProjectManagerService
 import com.lightbend.lagom.scaladsl.api.ServiceCall
 import com.lightbend.lagom.scaladsl.api.broker.Topic
 import com.lightbend.lagom.scaladsl.broker.TopicProducer
@@ -14,7 +14,7 @@ import akka.{Done, NotUsed}
 /**
   * Implementation of the ServiceManagerService.
   */
-class ServiceManagerServiceImpl(persistentEntityRegistry: PersistentEntityRegistry) extends ServiceManagerService {
+class ProjectManagerServiceImpl(persistentEntityRegistry: PersistentEntityRegistry) extends ProjectManagerService {
 
   override def getProject(id: UUID) = ServiceCall { _ =>
     val ref = persistentEntityRegistry.refFor[ProjectEntity](id.toString)

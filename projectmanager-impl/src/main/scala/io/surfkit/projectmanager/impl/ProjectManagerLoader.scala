@@ -1,4 +1,4 @@
-package io.surfkit.servicemanager.impl
+package io.surfkit.projectmanager.impl
 
 import com.lightbend.lagom.scaladsl.api.ServiceLocator
 import com.lightbend.lagom.scaladsl.api.ServiceLocator.NoServiceLocator
@@ -6,11 +6,11 @@ import com.lightbend.lagom.scaladsl.persistence.cassandra.CassandraPersistenceCo
 import com.lightbend.lagom.scaladsl.server._
 import com.lightbend.lagom.scaladsl.devmode.LagomDevModeComponents
 import play.api.libs.ws.ahc.AhcWSComponents
-import io.surfkit.servicemanager.api.ServiceManagerService
+import io.surfkit.projectmanager.api.ProjectManagerService
 import com.lightbend.lagom.scaladsl.broker.kafka.LagomKafkaComponents
 import com.softwaremill.macwire._
 
-class ServiceManagerLoader extends LagomApplicationLoader {
+class ProjectManagerLoader extends LagomApplicationLoader {
 
   override def load(context: LagomApplicationContext): LagomApplication =
     new ServiceManagerApplication(context) {
@@ -20,7 +20,7 @@ class ServiceManagerLoader extends LagomApplicationLoader {
   override def loadDevMode(context: LagomApplicationContext): LagomApplication =
     new ServiceManagerApplication(context) with LagomDevModeComponents
 
-  override def describeService = Some(readDescriptor[ServiceManagerService])
+  override def describeService = Some(readDescriptor[ProjectManagerService])
 }
 
 abstract class ServiceManagerApplication(context: LagomApplicationContext)
@@ -30,7 +30,7 @@ abstract class ServiceManagerApplication(context: LagomApplicationContext)
     with AhcWSComponents {
 
   // Bind the service that this server provides
-  override lazy val lagomServer = serverFor[ServiceManagerService](wire[ServiceManagerServiceImpl])
+  override lazy val lagomServer = serverFor[ProjectManagerService](wire[ProjectManagerServiceImpl])
 
   // Register the JSON serializer registry
   override lazy val jsonSerializerRegistry = ServiceManagerSerializerRegistry

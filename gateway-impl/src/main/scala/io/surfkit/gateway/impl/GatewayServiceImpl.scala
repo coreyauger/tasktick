@@ -18,7 +18,7 @@ import pdi.jwt.{Jwt, JwtAlgorithm, JwtJson}
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.typesafe.config.ConfigFactory
 import io.surfkit.gateway.impl.util.{JwtTokenUtil, SecurePasswordHashing}
-import io.surfkit.servicemanager.api._
+import io.surfkit.projectmanager.api._
 import play.api.libs.ws.ahc.StandaloneAhcWSClient
 import play.api.libs.json._
 
@@ -30,7 +30,7 @@ import scala.concurrent.Future
   */
 class GatewayServiceImpl(system: ActorSystem,
                          persistentEntityRegistry: PersistentEntityRegistry,
-                         projectService: ServiceManagerService
+                         projectService: ProjectManagerService
                         ) extends GatewayService{
 
   implicit val actorSysterm = system
