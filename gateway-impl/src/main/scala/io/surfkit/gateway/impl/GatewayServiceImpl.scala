@@ -66,7 +66,6 @@ class GatewayServiceImpl(system: ActorSystem,
   }
 
   override def registerUser = ServiceCall { request =>
-    // TODO request validation
     val ref = persistentEntityRegistry.refFor[UserEntity](request.email)  // NOTE: in production "email" is a bad id (bad hashing etc)
     // we are only using "email" to avoid having a Read side at this point.
     ref.ask(
@@ -216,11 +215,9 @@ class GatewayServiceImpl(system: ActorSystem,
 
   override def stream(token: String) =
     ServerServiceCall { src =>
-
       val withAuthHeader = RequestHeader.Default.withHeader("Authorization", s"Bearer ${token}")
 
       val tokenContent = authToken(token)
-      //val source = Source.tick(100 milliseconds, 2 seconds, "tick").mapAsync(4){ _ =>
       val source = src.mapAsync(4) {
         case SocketEvent(_: GetUser) => getUser.invokeWithHeaders(withAuthHeader, NotUsed).map(x => SocketEvent(UserList( Seq(x._2.user) )))
         case SocketEvent(x: GetProjects) => getProjects(x.skip, x.take).invokeWithHeaders(withAuthHeader, NotUsed).map(x => SocketEvent(x._2))
@@ -260,7 +257,6 @@ class GatewayServiceImpl(system: ActorSystem,
 }
 
 object GatewayServiceImpl{
-
   lazy val cfg = ConfigFactory.load
 
   import play.api.libs.json._
@@ -308,8 +304,6 @@ object AuthenticationServiceComposition {
   val secret = ConfigFactory.load().getString("jwt.secret")
   val algorithm = JwtAlgorithm.HS512
 
-
-
   def authenticated[Request, Response](serviceCall: (TokenContent, String) => ServerServiceCall[Request, Response]) =
     ServerServiceCall.compose { requestHeader =>
       val tokenContent = extractTokenContent(requestHeader).filter(tokenContent => isAuthToken(tokenContent))
@@ -320,13 +314,9 @@ object AuthenticationServiceComposition {
       }
     }
 
-  def authToken(token: String) = {
-    if(validateToken(token))
-      decodeToken(token)
-    else
-      throw Forbidden("Authorization token is invalid")
-  }
-
+  def authToken(token: String) =
+    if(validateToken(token)) decodeToken(token)
+    else throw Forbidden("Authorization token is invalid")
 
   def authenticatedWithRefreshToken[Request, Response](serviceCall: TokenContent => ServerServiceCall[Request, Response]) =
     ServerServiceCall.compose { requestHeader =>
@@ -339,12 +329,10 @@ object AuthenticationServiceComposition {
 
   private def extractTokenHeader(requestHeader: RequestHeader) =
     requestHeader.getHeader("Authorization").map(header => sanitizeToken(header))
-
   private def extractTokenContent[Response, Request](requestHeader: RequestHeader) =
     extractTokenHeader(requestHeader)
       .filter(rawToken => validateToken(rawToken))
       .map(rawToken => decodeToken(rawToken))
-
   private def sanitizeToken(header: String) = header.replaceFirst("Bearer ", "")
   private def validateToken(token: String) = Jwt.isValid(token, secret, Seq(algorithm))
   private def decodeToken(token: String) = {
@@ -354,8 +342,6 @@ object AuthenticationServiceComposition {
       case Failure(_) => throw Forbidden(s"Unable to decode token")
     }
   }
-
   private def isAuthToken(tokenContent: TokenContent) = !tokenContent.isRefreshToken
   private def isRefreshToken(tokenContent: TokenContent) = tokenContent.isRefreshToken
-
 }

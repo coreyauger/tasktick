@@ -21,7 +21,7 @@ class ProjectManagerServiceImpl(persistentEntityRegistry: PersistentEntityRegist
     ref.ask(GetProject(id)).map(convertProject)
   }
 
-  override def createProject = ServiceCall{ req =>
+  override def createProject = ServiceCall{ req: api.CreateProject =>
     val newProjectId = UUID.randomUUID
     val ref = persistentEntityRegistry.refFor[ProjectEntity](newProjectId.toString)
     ref.ask(CreateProject(
