@@ -1,7 +1,7 @@
 # TaskTick
 
 An example Task Manager project that has been created using Lagom.  
-It is fantastic ;)
+TaskTick is fantastic ;)
 
 
 ## Overview
