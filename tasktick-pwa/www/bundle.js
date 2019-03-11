@@ -35728,6 +35728,8 @@
 	var SignIn_1 = __webpack_require__(274);
 	var Projects_1 = __webpack_require__(491);
 	var core_1 = __webpack_require__(303);
+	var Account_1 = __webpack_require__(499);
+	var Users_1 = __webpack_require__(500);
 	var drawerWidth = 240;
 	var styles = function (theme) {
 	    return createStyles_1.default({
@@ -35837,6 +35839,11 @@
 	            _this.handleClose();
 	            push("/p/signin");
 	        };
+	        _this.handleMyAccpint = function () {
+	            var _a = _this.props.store.routing, location = _a.location, push = _a.push, goBack = _a.goBack;
+	            _this.handleClose();
+	            push("/p/account");
+	        };
 	        if (window.localStorage.getItem("authToken"))
 	            props.store.socketStore.connect(new WebSocket_1.TasktickSocket(window.localStorage.getItem("authToken")));
 	        return _this;
@@ -35860,7 +35867,7 @@
 	                                React.createElement(Notifications_1.default, null))),
 	                        React.createElement(core_1.Menu, { id: "simple-menu", anchorEl: this.state.anchorEl, open: this.state.anchorEl != null, onClose: this.handleClose },
 	                            React.createElement(core_1.MenuItem, { onClick: this.handleClose }, "Profile"),
-	                            React.createElement(core_1.MenuItem, { onClick: this.handleClose }, "My account"),
+	                            React.createElement(core_1.MenuItem, { onClick: this.handleMyAccpint }, "My account"),
 	                            React.createElement(core_1.MenuItem, { onClick: this.handleLogout }, "Logout")))),
 	                React.createElement(Drawer_1.default, { variant: "permanent", classes: {
 	                        paper: classnames_1.default(classes.drawerPaper, !this.state.open && classes.drawerPaperClose),
@@ -35896,7 +35903,9 @@
 	                    React.createElement("div", { className: classes.appBarSpacer }),
 	                    React.createElement(react_router_1.Route, { path: '/p/signin', render: function (props) { return React.createElement(SignIn_1.default, { store: index_1.default }); } }),
 	                    React.createElement(react_router_1.Route, { path: '/p/project/:id', render: function (props) { return React.createElement(Projects_1.default, { store: index_1.default, project: props.id }); } }),
-	                    React.createElement(react_router_1.Route, { path: '/p/projects', render: function (props) { return React.createElement(Projects_1.default, { store: index_1.default }); } })))));
+	                    React.createElement(react_router_1.Route, { path: '/p/projects', render: function (props) { return React.createElement(Projects_1.default, { store: index_1.default }); } }),
+	                    React.createElement(react_router_1.Route, { path: '/p/account', render: function (props) { return React.createElement(Account_1.default, { store: index_1.default }); } }),
+	                    React.createElement(react_router_1.Route, { path: '/p/users', render: function (props) { return React.createElement(Users_1.default, { store: index_1.default }); } })))));
 	    };
 	    App = __decorate([
 	        mobx_react_1.inject('routing'),
@@ -80861,9 +80870,9 @@
 	                        React.createElement("div", { className: classes.thin },
 	                            React.createElement(core_1.TextField, { onChange: this.updateTaskName, value: this.state.taskName, autoFocus: true, margin: "dense", id: "task", label: "New Task", type: "text", fullWidth: true }))),
 	                    React.createElement("div", null,
-	                        React.createElement(List_1.default, null, sd.tasks.map(function (x) { return _this.props.store.taskStore.tasks[x]; }).filter(function (x) { return x; }).map(function (x) { return (React.createElement(ListItem_1.default, { key: x.id, button: true, onClick: function () { return _this.onTaskSelect(x); } },
+	                        React.createElement(List_1.default, null, sd.tasks.map(function (x) { return _this.props.store.taskStore.tasks[x]; }).filter(function (x) { return x; }).sort(function (a, b) { return (a.name < b.name ? -1 : 1); }).map(function (x) { return (React.createElement(ListItem_1.default, { key: x.id, button: true, onClick: function () { return _this.onTaskSelect(x); } },
 	                            React.createElement(core_1.Checkbox, { checked: x.done, tabIndex: -1, onChange: _this.toggleTaskDone(x) }),
-	                            React.createElement(ListItemText_1.default, { primary: x.name, secondary: x.description, className: x.done && classes.strike }))); })))))));
+	                            React.createElement(ListItemText_1.default, { primary: x.name, secondary: x.description, className: x.done ? classes.strike : "" }))); })))))));
 	        var _a;
 	    };
 	    ProjectCard = __decorate([
@@ -81034,9 +81043,7 @@
 	var mobx_react_1 = __webpack_require__(16);
 	var styles = function (theme) {
 	    return createStyles_1.default({
-	        card: {
-	            maxWidth: 800,
-	        },
+	        card: {},
 	        media: {
 	            height: 0,
 	            paddingTop: '56.25%',
@@ -81160,6 +81167,189 @@
 	    return TaskCard;
 	}(React.Component));
 	exports.default = withRoot_1.default(withStyles_1.default(styles)(TaskCard));
+
+
+/***/ },
+/* 499 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var __extends = (this && this.__extends) || (function () {
+	    var extendStatics = Object.setPrototypeOf ||
+	        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+	        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+	    return function (d, b) {
+	        extendStatics(d, b);
+	        function __() { this.constructor = d; }
+	        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+	    };
+	})();
+	var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+	    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+	    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+	    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+	    return c > 3 && r && Object.defineProperty(target, key, r), r;
+	};
+	Object.defineProperty(exports, "__esModule", { value: true });
+	var React = __webpack_require__(1);
+	var mobx_react_1 = __webpack_require__(16);
+	var createStyles_1 = __webpack_require__(165);
+	var withStyles_1 = __webpack_require__(63);
+	var Grid_1 = __webpack_require__(270);
+	var withRoot_1 = __webpack_require__(252);
+	var core_1 = __webpack_require__(303);
+	var styles = function (theme) {
+	    return createStyles_1.default({
+	        root: {},
+	        tableContainer: {
+	            height: 320,
+	        },
+	        paper: {
+	            padding: theme.spacing.unit * 2,
+	            textAlign: 'center',
+	            color: theme.palette.text.secondary,
+	        },
+	        fab: {
+	            margin: theme.spacing.unit,
+	            position: "absolute",
+	            right: 0,
+	            bottom: 0,
+	        },
+	        button: {
+	            margin: theme.spacing.unit,
+	            float: "right"
+	        },
+	        media: {
+	            height: 340,
+	        },
+	    });
+	};
+	;
+	var Account = (function (_super) {
+	    __extends(Account, _super);
+	    function Account() {
+	        var _this = _super !== null && _super.apply(this, arguments) || this;
+	        _this.state = {};
+	        _this.linkGithub = function () {
+	            window.open('/api/auth/github', '_blank');
+	        };
+	        return _this;
+	    }
+	    Account.prototype.render = function () {
+	        var _a = this.props.store.routing, location = _a.location, push = _a.push, goBack = _a.goBack;
+	        var user = this.props.store.userStore.users.length && this.props.store.userStore.users[0];
+	        var pathname = location.pathname.split('/');
+	        var classes = this.props.classes;
+	        return (React.createElement("div", { className: this.props.classes.root },
+	            React.createElement(Grid_1.default, { container: true, spacing: 24 },
+	                React.createElement(Grid_1.default, { item: true, xs: 4, key: "user" },
+	                    React.createElement(core_1.Card, null,
+	                        React.createElement(core_1.CardActionArea, null,
+	                            React.createElement(core_1.CardMedia, { className: classes.media, image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR4Je1-yXBrbsfj-WVPDyMsgGGSe3_qUmHbo-pfRs4x7NOcNBvD", title: "Avatar" }),
+	                            React.createElement(core_1.CardContent, null,
+	                                React.createElement(core_1.Typography, { gutterBottom: true, variant: "h5", component: "h2" },
+	                                    user && user.firstName,
+	                                    " ",
+	                                    user && user.lastName),
+	                                React.createElement(core_1.Typography, { component: "p" }, user && user.email))),
+	                        React.createElement(core_1.CardActions, null,
+	                            React.createElement(core_1.Button, { size: "small", color: "primary", onClick: this.linkGithub }, "Link GitHub")))),
+	                React.createElement(Grid_1.default, { item: true, xs: 8, key: "userStream" },
+	                    React.createElement(core_1.Card, null,
+	                        React.createElement(core_1.CardHeader, { avatar: React.createElement(core_1.Avatar, { "aria-label": "Service" }, "U"), title: "Account Information", subheader: "update your account information" }),
+	                        React.createElement(core_1.CardContent, null,
+	                            React.createElement(core_1.Typography, { component: "p" }, "this is some text.")),
+	                        React.createElement(core_1.CardContent, null,
+	                            React.createElement("div", null,
+	                                React.createElement(core_1.TextField, { autoFocus: true, value: user && user.firstName, margin: "dense", id: "task", label: "Full Name", type: "text", fullWidth: true }),
+	                                React.createElement(core_1.TextField, { margin: "dense", value: user && user.email, id: "task", label: "Email address", type: "text", fullWidth: true })),
+	                            React.createElement("div", null,
+	                                React.createElement(core_1.Button, { color: "secondary", className: classes.button }, "Save"))))))));
+	    };
+	    Account = __decorate([
+	        mobx_react_1.observer
+	    ], Account);
+	    return Account;
+	}(React.Component));
+	exports.default = withRoot_1.default(withStyles_1.default(styles)(Account));
+
+
+/***/ },
+/* 500 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var __extends = (this && this.__extends) || (function () {
+	    var extendStatics = Object.setPrototypeOf ||
+	        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+	        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+	    return function (d, b) {
+	        extendStatics(d, b);
+	        function __() { this.constructor = d; }
+	        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+	    };
+	})();
+	var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+	    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+	    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+	    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+	    return c > 3 && r && Object.defineProperty(target, key, r), r;
+	};
+	Object.defineProperty(exports, "__esModule", { value: true });
+	var React = __webpack_require__(1);
+	var mobx_react_1 = __webpack_require__(16);
+	var createStyles_1 = __webpack_require__(165);
+	var withStyles_1 = __webpack_require__(63);
+	var Grid_1 = __webpack_require__(270);
+	var withRoot_1 = __webpack_require__(252);
+	var styles = function (theme) {
+	    return createStyles_1.default({
+	        root: {},
+	        tableContainer: {
+	            height: 320,
+	        },
+	        paper: {
+	            padding: theme.spacing.unit * 2,
+	            textAlign: 'center',
+	            color: theme.palette.text.secondary,
+	        },
+	        fab: {
+	            margin: theme.spacing.unit,
+	            position: "absolute",
+	            right: 0,
+	            bottom: 0,
+	        },
+	        card: {
+	            maxWidth: 345,
+	        },
+	        media: {
+	            height: 140,
+	        },
+	    });
+	};
+	;
+	var Users = (function (_super) {
+	    __extends(Users, _super);
+	    function Users() {
+	        var _this = _super !== null && _super.apply(this, arguments) || this;
+	        _this.state = {};
+	        return _this;
+	    }
+	    Users.prototype.render = function () {
+	        var _a = this.props.store.routing, location = _a.location, push = _a.push, goBack = _a.goBack;
+	        var pathname = location.pathname.split('/');
+	        var classes = this.props.classes;
+	        return (React.createElement("div", { className: this.props.classes.root },
+	            React.createElement(Grid_1.default, { container: true, spacing: 24 },
+	                React.createElement(Grid_1.default, { item: true, xs: 4, key: "user" }),
+	                React.createElement(Grid_1.default, { item: true, xs: 8, key: "userStream" }))));
+	    };
+	    Users = __decorate([
+	        mobx_react_1.observer
+	    ], Users);
+	    return Users;
+	}(React.Component));
+	exports.default = withRoot_1.default(withStyles_1.default(styles)(Users));
 
 
 /***/ }

@@ -28,7 +28,6 @@ import { observer } from 'mobx-react';
 const styles = (theme: Theme) =>
   createStyles({
     card: {
-        maxWidth: 800,
       },
       media: {
         height: 0,

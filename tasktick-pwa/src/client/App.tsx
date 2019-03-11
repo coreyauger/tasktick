@@ -34,6 +34,8 @@ import SignIn from './pages/SignIn';
 import Projects from './pages/Projects';
 import { uuidv4, Project } from './stores/data';
 import { Menu, MenuItem } from '@material-ui/core';
+import Account from './pages/Account';
+import Users from './pages/Users';
 
 
 
@@ -168,6 +170,11 @@ class App extends React.Component<Props & WithStyles<typeof styles>, State> {
     this.handleClose();
     push("/p/signin")
   }
+  handleMyAccpint = () =>{
+    const { location, push, goBack } = this.props.store.routing; // CA - inject above did not work.. you should see this as a "prop" (investigate)
+    this.handleClose();
+    push("/p/account")
+  }
 
   render() {
     console.log("APP RENDER!!")
@@ -217,7 +224,7 @@ class App extends React.Component<Props & WithStyles<typeof styles>, State> {
                   onClose={this.handleClose}
                 >
                   <MenuItem onClick={this.handleClose}>Profile</MenuItem>
-                  <MenuItem onClick={this.handleClose}>My account</MenuItem>
+                  <MenuItem onClick={this.handleMyAccpint}>My account</MenuItem>
                   <MenuItem onClick={this.handleLogout}>Logout</MenuItem>
                 </Menu>
             </Toolbar>
@@ -279,6 +286,8 @@ class App extends React.Component<Props & WithStyles<typeof styles>, State> {
             <Route path='/p/signin' render={(props) => <SignIn store={stores} /> }  />            
             <Route path='/p/project/:id' render={(props) => <Projects store={stores} project={props.id} /> }  />
             <Route path='/p/projects' render={(props) => <Projects store={stores} /> }  />        
+            <Route path='/p/account' render={(props) => <Account store={stores} /> }  /> 
+            <Route path='/p/users' render={(props) => <Users store={stores} /> }  />        
                 
             
           </main>

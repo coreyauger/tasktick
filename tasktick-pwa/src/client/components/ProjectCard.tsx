@@ -177,14 +177,14 @@ class ProjectCard extends React.Component<Props & WithStyles<typeof styles>, Sta
             </div>
             <div>
                 <List>
-                {sd.tasks.map(x => this.props.store.taskStore.tasks[x] ).filter(x => x).map( (x: Task ) => (
+                {sd.tasks.map(x => this.props.store.taskStore.tasks[x] ).filter(x => x).sort( (a:Task, b:Task) => (a.name < b.name ? -1 : 1) ).map( (x: Task ) => (
                     <ListItem key={x.id} button={true} onClick={() => this.onTaskSelect(x) } >
                         <Checkbox
                             checked={x.done}
                             tabIndex={-1}    
                             onChange={this.toggleTaskDone(x)}                      
                           />
-                        <ListItemText primary={x.name} secondary={x.description} className={x.done && classes.strike} />
+                        <ListItemText primary={x.name} secondary={x.description} className={x.done ? classes.strike : ""} />
                     </ListItem>)                
                 )}
               </List> 
