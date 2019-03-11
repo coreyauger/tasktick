@@ -35,7 +35,7 @@ compile and run the react front end
 ```
 cd tasktick-pwa
 npm i
-gult watch
+gulp watch
 ```
 
 change the refrence to where the compiled `www` directory location is in your `application.conf`
