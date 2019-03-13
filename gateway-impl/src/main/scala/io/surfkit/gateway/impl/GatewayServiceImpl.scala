@@ -6,12 +6,14 @@ import java.util.UUID
 
 import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
+import akka.management.AkkaManagement
+import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
 import io.surfkit.gateway.api._
 import com.lightbend.lagom.scaladsl.api.ServiceCall
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntityRegistry
-import com.lightbend.lagom.scaladsl.server.ServerServiceCall
+import com.lightbend.lagom.scaladsl.server.{LagomApplicationContext, ServerServiceCall}
 import com.lightbend.lagom.scaladsl.api.transport.{Forbidden, RequestHeader, ResponseHeader}
 import pdi.jwt.{Jwt, JwtAlgorithm, JwtJson}
 
@@ -19,33 +21,51 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import com.typesafe.config.ConfigFactory
 import io.surfkit.gateway.impl.util.{JwtTokenUtil, SecurePasswordHashing}
 import io.surfkit.projectmanager.api._
+import play.Environment
+import play.api.Mode
 import play.api.libs.ws.ahc.StandaloneAhcWSClient
 import play.api.libs.json._
 
 import scala.util.{Failure, Success}
 import scala.concurrent.Future
+import scala.io.Source
 
 /**
   * Implementation of the GatewayService.
   */
 class GatewayServiceImpl(system: ActorSystem,
                          persistentEntityRegistry: PersistentEntityRegistry,
-                         projectService: ProjectManagerService
+                         projectService: ProjectManagerService,
+                         context: LagomApplicationContext
                         ) extends GatewayService{
 
   implicit val actorSysterm = system
   implicit val materializer = ActorMaterializer()
   val ws = StandaloneAhcWSClient()
 
+
+
+  // Akka Management hosts the HTTP routes for debugging
+  AkkaManagement.get(system).start()
+  val userResourceFolder = context.playContext.environment.mode != Mode.Dev
+  if (context.playContext.environment.mode != Mode.Dev) {
+    // Starting the bootstrap process in production
+    ClusterBootstrap.get(system).start()
+  }
+
   import GatewayServiceImpl._
   import AuthenticationServiceComposition._
 
   val config = ConfigFactory.load()
   val wwwPath = config.getString("www.base-url")
-  val indexHtml = Files.readAllBytes( Paths.get(wwwPath + "/index.html") )
+  val indexHtml =
+    if(userResourceFolder)Source.fromResource("www/index.html").getLines().mkString("\n").map(_.toByte).toArray
+    else Files.readAllBytes( Paths.get(wwwPath + "/index.html") )
 
   // TODO: make this NOT a def in production..
-  def indexJs = Files.readAllBytes( Paths.get(wwwPath + "/bundle.js") )
+  def indexJs =
+    if(userResourceFolder)Source.fromResource("www/bundle.js").getLines().mkString("\n").map(_.toByte).toArray
+    else Files.readAllBytes( Paths.get(wwwPath + "/bundle.js") )
 
   override def getPwaIndex = ServiceCall {  _  =>
     Future.successful(new String(indexHtml))
@@ -54,7 +74,10 @@ class GatewayServiceImpl(system: ActorSystem,
     Future.successful(new String(indexJs))
   }
   override def getPwaImage(img: String) = ServerServiceCall { _ =>
-    Future.successful(Files.readAllBytes( Paths.get(wwwPath + "/imgs/"+img) ))
+    Future.successful(
+      if(userResourceFolder)Array[Byte]()   // TODO:
+      else Files.readAllBytes(Paths.get(wwwPath + "/imgs/"+img) )
+    )
   }
 
   override def getUser = authenticated { (tokenContent, _) =>

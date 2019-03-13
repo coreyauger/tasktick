@@ -8,14 +8,16 @@ import com.lightbend.lagom.scaladsl.devmode.LagomDevModeComponents
 import play.api.libs.ws.ahc.AhcWSComponents
 import io.surfkit.projectmanager.api.ProjectManagerService
 import com.lightbend.lagom.scaladsl.broker.kafka.LagomKafkaComponents
+import com.lightbend.lagom.scaladsl.client.ConfigurationServiceLocatorComponents
 import com.softwaremill.macwire._
 
 class ProjectManagerLoader extends LagomApplicationLoader {
 
   override def load(context: LagomApplicationContext): LagomApplication =
-    new ServiceManagerApplication(context) {
+    new ServiceManagerApplication(context) with ConfigurationServiceLocatorComponents
+    /*new ServiceManagerApplication(context) {
       override def serviceLocator: ServiceLocator = NoServiceLocator
-    }
+    }*/
 
   override def loadDevMode(context: LagomApplicationContext): LagomApplication =
     new ServiceManagerApplication(context) with LagomDevModeComponents

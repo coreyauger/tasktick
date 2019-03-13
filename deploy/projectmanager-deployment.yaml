@@ -1,0 +1,62 @@
+   apiVersion: apps/v1
+   kind: Deployment
+   metadata:
+     name: projectmanager
+     labels:
+       app: projectmanager
+   spec:
+     replicas: 1
+     selector:
+       matchLabels:
+         app: projectmanager
+     template:
+       metadata:
+         labels:
+           app: projectmanager
+       spec:
+         serviceAccountName: projectmanager-sa
+         containers:
+         - name: projectmanager
+           image: projectmanager-impl:1.0-SNAPSHOT
+           ports:
+           - name: http
+             containerPort: 9000
+           - name: akka-remote
+             containerPort: 2552
+           - name: akka-mgmt-http
+             containerPort: 8558
+#           envFrom:
+#             - configMapRef:
+#                 name: projectmanager-config
+           env:
+             - name: "HTTP_BIND_ADDRESS"
+               value: "0.0.0.0"
+             - name: JAVA_OPTS
+               value: "-Dconfig.resource=application.prod.conf -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap"
+             - name: CASSANDRA_CONTACT_POINT
+               value: "cassandra.cassandra"
+             - name: KAFKA_BROKERS_SERVICE_URL
+               value: "tasktick-strimzi-kafka-bootstrap.kafka:9092"
+           resources:
+             requests:
+               memory: "256Mi"
+               cpu: "100m"
+             limits:
+               memory: "2Gi"
+           readinessProbe:
+             httpGet:
+               path: /ready
+               port: akka-mgmt-http
+             initialDelaySeconds: 10
+             periodSeconds: 5
+           livenessProbe:
+             httpGet:
+               path: /alive
+               port: akka-mgmt-http
+             initialDelaySeconds: 90
+             periodSeconds: 30
+
+
+
+
+

@@ -151,6 +151,37 @@ object ProjectState {
   implicit val format: Format[ProjectState] = Json.format
 }
 
+case class Project(
+                    id: UUID,
+                    name: String,
+                    owner: UUID,
+                    team: UUID,
+                    description: String,
+                    imgUrl: Option[String],
+                    tasks: Set[Task]
+                  )
+object Project { implicit val format: Format[Project] = Json.format }
+
+case class Note(id: UUID, project: UUID, task: UUID, user: UUID, note: String, date: Instant)
+object Note { implicit val format: Format[Note] = Json.format }
+
+case class Task(
+                 id: UUID,
+                 project: UUID,
+                 name: String,
+                 description: String,
+                 done: Boolean,
+                 assigned: Option[UUID],
+                 startDate: Option[Instant],
+                 endDate: Option[Instant],
+                 lastUpdated: Instant,
+                 section: String,
+                 parent: Option[UUID] = None,
+                 notes: Seq[Note] = Seq.empty[Note]
+               )
+object Task { implicit val format: Format[Task] = Json.format }
+
+
 /**
   * This interface defines all the events that the ServiceManagerEntity supports.
   */
@@ -164,43 +195,30 @@ object ProjectEvent {
 
 // Project Events ..
 case class ProjectCreated(project: Project) extends ProjectEvent
-object ProjectCreated {
-  implicit val format: Format[ProjectCreated] = Json.format
-}
+object ProjectCreated { implicit val format: Format[ProjectCreated] = Json.format }
+
 case class ProjectUpdated(project: Project) extends ProjectEvent
-object ProjectUpdated {
-  implicit val format: Format[ProjectUpdated] = Json.format
-}
+object ProjectUpdated { implicit val format: Format[ProjectUpdated] = Json.format}
+
 case class ProjectDeleted(id: UUID) extends ProjectEvent
-object ProjectDeleted {
-  implicit val format: Format[ProjectDeleted] = Json.format
-}
-
-
+object ProjectDeleted { implicit val format: Format[ProjectDeleted] = Json.format }
 
 // Task Events ..
 case class TaskAdded(task: Task) extends ProjectEvent
-object TaskAdded {
-  implicit val format: Format[TaskAdded] = Json.format
-}
+object TaskAdded { implicit val format: Format[TaskAdded] = Json.format }
+
 case class TaskUpdated(task: Task) extends ProjectEvent
-object TaskUpdated {
-  implicit val format: Format[TaskUpdated] = Json.format
-}
+object TaskUpdated { implicit val format: Format[TaskUpdated] = Json.format }
+
 case class TaskDeleted(id: UUID) extends ProjectEvent
-object TaskDeleted {
-  implicit val format: Format[TaskDeleted] = Json.format
-}
+object TaskDeleted { implicit val format: Format[TaskDeleted] = Json.format }
 
 // Notes
 case class NoteAdded(task: UUID, note: Note) extends ProjectEvent
-object NoteAdded {
-  implicit val format: Format[NoteAdded] = Json.format
-}
+object NoteAdded {implicit val format: Format[NoteAdded] = Json.format }
+
 case class NoteDeleted(task: UUID, id: UUID) extends ProjectEvent
-object NoteDeleted {
-  implicit val format: Format[NoteDeleted] = Json.format
-}
+object NoteDeleted { implicit val format: Format[NoteDeleted] = Json.format }
 
 
 
@@ -209,71 +227,26 @@ object NoteDeleted {
   */
 sealed trait ProjectCommand[R] extends ReplyType[R]
 
-case class Project(
-               id: UUID,
-               name: String,
-               owner: UUID,
-               team: UUID,
-               description: String,
-               imgUrl: Option[String],
-               tasks: Set[Task]
-                )
-object Project {
-  implicit val format: Format[Project] = Json.format
-}
-
-case class Note(id: UUID, project: UUID, task: UUID, user: UUID, note: String, date: Instant)
-object Note {
-  implicit val format: Format[Note] = Json.format
-}
-
-case class Task(
-  id: UUID,
-  project: UUID,
-  name: String,
-  description: String,
-  done: Boolean,
-  assigned: Option[UUID],
-  startDate: Option[Instant],
-  endDate: Option[Instant],
-  lastUpdated: Instant,
-  section: String,
-  parent: Option[UUID] = None,
-  notes: Seq[Note] = Seq.empty[Note]
-)
-object Task {
-  implicit val format: Format[Task] = Json.format
-}
-
 // Projects
 case class CreateProject(name: String, owner: UUID, team: UUID, description: String, imageUrl: Option[String] = None) extends ProjectCommand[ProjectCreated]
-object CreateProject {
-  implicit val format: Format[CreateProject] = Json.format
-}
+object CreateProject { implicit val format: Format[CreateProject] = Json.format }
 
 case class UpdateProject( name: String,
                           owner: UUID,
                           team: UUID,
                           description: String,
                           imageUrl: Option[String]) extends ProjectCommand[ProjectUpdated]
-object UpdateProject {
-  implicit val format: Format[UpdateProject] = Json.format
-}
+object UpdateProject { implicit val format: Format[UpdateProject] = Json.format }
+
 case class DeleteProject(id: UUID)extends ProjectCommand[ProjectDeleted]
-object DeleteProject {
-  implicit val format: Format[DeleteProject] = Json.format
-}
+object DeleteProject { implicit val format: Format[DeleteProject] = Json.format }
+
 case class GetProject(id: UUID) extends ProjectCommand[Project]
-object GetProject {
-  implicit val format: Format[GetProject] = Json.format
-}
+object GetProject { implicit val format: Format[GetProject] = Json.format }
 
 // Tasks
-
 case class AddTask(name: String,  description: String, section: String, parent: Option[UUID] = None) extends ProjectCommand[TaskAdded]
-object AddTask {
-  implicit val format: Format[AddTask] = Json.format
-}
+object AddTask { implicit val format: Format[AddTask] = Json.format }
 
 case class UpdateTask( id: UUID,
                        name: String,
@@ -285,25 +258,17 @@ case class UpdateTask( id: UUID,
                        endDate: Option[Instant],
                        section: String
                      ) extends ProjectCommand[TaskUpdated]
-object UpdateTask {
-  implicit val format: Format[UpdateTask] = Json.format
-}
-case class DeleteTask(id: UUID)extends ProjectCommand[TaskDeleted]
-object DeleteTask {
-  implicit val format: Format[DeleteTask] = Json.format
-}
+object UpdateTask { implicit val format: Format[UpdateTask] = Json.format }
 
+case class DeleteTask(id: UUID)extends ProjectCommand[TaskDeleted]
+object DeleteTask { implicit val format: Format[DeleteTask] = Json.format }
 
 // Notes
 case class AddNote(task: UUID, user: UUID, note: String)extends ProjectCommand[NoteAdded]
-object AddNote {
-  implicit val format: Format[AddNote] = Json.format
-}
-case class DeleteNote(task: UUID, id: UUID)extends ProjectCommand[NoteDeleted]
-object DeleteNote {
-  implicit val format: Format[DeleteNote] = Json.format
-}
+object AddNote { implicit val format: Format[AddNote] = Json.format }
 
+case class DeleteNote(task: UUID, id: UUID)extends ProjectCommand[NoteDeleted]
+object DeleteNote { implicit val format: Format[DeleteNote] = Json.format }
 
 
 /**

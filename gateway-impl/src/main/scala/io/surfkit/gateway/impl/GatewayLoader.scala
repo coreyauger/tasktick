@@ -8,6 +8,7 @@ import com.lightbend.lagom.scaladsl.devmode.LagomDevModeComponents
 import play.api.libs.ws.ahc.AhcWSComponents
 import io.surfkit.gateway.api.GatewayService
 import com.lightbend.lagom.scaladsl.broker.kafka.LagomKafkaComponents
+import com.lightbend.lagom.scaladsl.client.ConfigurationServiceLocatorComponents
 import com.lightbend.lagom.scaladsl.playjson.JsonSerializerRegistry
 import com.softwaremill.macwire._
 import io.surfkit.projectmanager.api.ProjectManagerService
@@ -15,12 +16,15 @@ import io.surfkit.projectmanager.api.ProjectManagerService
 class GatewayLoader extends LagomApplicationLoader {
 
   override def load(context: LagomApplicationContext): LagomApplication =
-    new GatewayApplication(context) {
-      override def serviceLocator: ServiceLocator = NoServiceLocator
-    }
+    new GatewayApplication(context) with ConfigurationServiceLocatorComponents
+  //new GatewayApplication(context) {
+    //  override def serviceLocator: ServiceLocator = NoServiceLocator
+    //}
 
-  override def loadDevMode(context: LagomApplicationContext): LagomApplication =
+  override def loadDevMode(context: LagomApplicationContext): LagomApplication = {
+    println("\n\n**** IN DEV MODE *****\n\n")
     new GatewayApplication(context) with LagomDevModeComponents
+  }
 
   override def describeService = Some(readDescriptor[GatewayService])
 }

@@ -51,9 +51,9 @@ trait GatewayService extends Service {
     // @formatter:off
     named("gateway")
       .withCalls(
-        //pathCall("/", getPwaIndex _)(
-          //MessageSerializer.NotUsedMessageSerializer,
-          //new ContentTypeSerializer()),
+        pathCall("/", getPwaIndex _)(
+          MessageSerializer.NotUsedMessageSerializer,
+          new ContentTypeSerializer()),
         pathCall("/index.html", getPwaIndex _)(
           MessageSerializer.NotUsedMessageSerializer,
           new ContentTypeSerializer()),
