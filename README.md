@@ -3,6 +3,8 @@
 An example Task Manager project that has been created using Lagom.  
 TaskTick is fantastic ;)
 
+## Blog Post
+https://medium.com/@coreyauger/rapid-and-highly-scalable-development-using-scala-and-lagom-17a9205da42b
 
 ## Overview
 This project goes with my blog post and serves to demo how fast and easy it is to produce a modern progressive web application with Lagom.
