@@ -17,7 +17,7 @@
          serviceAccountName: gateway-sa
          containers:
          - name: gateway
-           image: gateway-impl:1.0-SNAPSHOT
+           image: 127.0.0.1:30400/gateway-impl:1.0-SNAPSHOT
            ports:
            - name: http
              containerPort: 9000
