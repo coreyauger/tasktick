@@ -42,6 +42,9 @@ lazy val `projectmanager-impl` = (project in file("projectmanager-impl"))
     ) ++ akkaManagementDeps
   )
   .settings(lagomForkedTestSettings: _*)
+  .settings(
+    dockerAlias := dockerAlias.value.withRegistryHost(Option("127.0.0.1:30400"))
+  )
   .dependsOn(`projectmanager-api`)
 
 
@@ -72,4 +75,3 @@ lazy val `gateway-impl` = (project in file("gateway-impl"))
   .dependsOn(`projectmanager-api`)
 
 dockerBaseImage := "openjdk:8-jre-slim"
-version in Docker := "latest"
