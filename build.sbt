@@ -65,6 +65,9 @@ lazy val `gateway-impl` = (project in file("gateway-impl"))
     ) ++ akkaManagementDeps
   )
   .settings(lagomForkedTestSettings: _*)
+  .settings(
+    dockerAlias := dockerAlias.value.withRegistryHost(Option("127.0.0.1:30400"))
+  )
   .dependsOn(`gateway-api`)
   .dependsOn(`projectmanager-api`)
 
