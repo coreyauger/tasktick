@@ -1,5 +1,6 @@
 package io.surfkit.projectmanager.impl
 
+import com.lightbend.lagom.scaladsl.akka.discovery.AkkaDiscoveryComponents
 import com.lightbend.lagom.scaladsl.api.ServiceLocator
 import com.lightbend.lagom.scaladsl.api.ServiceLocator.NoServiceLocator
 import com.lightbend.lagom.scaladsl.persistence.cassandra.CassandraPersistenceComponents
@@ -14,7 +15,7 @@ import com.softwaremill.macwire._
 class ProjectManagerLoader extends LagomApplicationLoader {
 
   override def load(context: LagomApplicationContext): LagomApplication =
-    new ServiceManagerApplication(context) with ConfigurationServiceLocatorComponents
+    new ServiceManagerApplication(context) with AkkaDiscoveryComponents
     /*new ServiceManagerApplication(context) {
       override def serviceLocator: ServiceLocator = NoServiceLocator
     }*/

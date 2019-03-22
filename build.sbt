@@ -9,6 +9,7 @@ val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4" % Test
 val jwt = "com.pauldijou" %% "jwt-play-json" % "2.1.0"
 
 val akkaMgmtVersion = "0.20.0"
+val lagomAkkaDiscovery =  "com.lightbend.lagom" %% "lagom-scaladsl-akka-discovery-service-locator" % "1.0.0"
 val akkaManagement = "com.lightbend.akka.management" %% "akka-management" % akkaMgmtVersion
 val akkaMgmtHttp =   "com.lightbend.akka.management" %% "akka-management-cluster-http" % akkaMgmtVersion
 val akkaClusterBootstrap = "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % akkaMgmtVersion
@@ -16,7 +17,7 @@ val akkaServiceDiscovery = "com.lightbend.akka.discovery" %% "akka-discovery-dns
 val akkaDiscoveryK8s =  "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % akkaMgmtVersion
 val akkaDiscoveryConfig = "com.lightbend.akka.discovery" %% "akka-discovery-config" % akkaMgmtVersion
 
-val akkaManagementDeps = Seq(akkaManagement, akkaMgmtHttp, akkaClusterBootstrap, akkaServiceDiscovery, akkaDiscoveryK8s, akkaDiscoveryConfig)
+val akkaManagementDeps = Seq(lagomAkkaDiscovery, akkaManagement, akkaMgmtHttp, akkaClusterBootstrap, akkaServiceDiscovery, akkaDiscoveryK8s, akkaDiscoveryConfig)
 
 lazy val `tasktick` = (project in file("."))
   .aggregate(`gateway-api`, `gateway-impl`, `projectmanager-api`, `projectmanager-impl`)

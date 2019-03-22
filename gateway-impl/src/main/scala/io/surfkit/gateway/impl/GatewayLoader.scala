@@ -1,7 +1,6 @@
 package io.surfkit.gateway.impl
 
-import com.lightbend.lagom.scaladsl.api.ServiceLocator
-import com.lightbend.lagom.scaladsl.api.ServiceLocator.NoServiceLocator
+import com.lightbend.lagom.scaladsl.akka.discovery.AkkaDiscoveryComponents
 import com.lightbend.lagom.scaladsl.persistence.cassandra.CassandraPersistenceComponents
 import com.lightbend.lagom.scaladsl.server._
 import com.lightbend.lagom.scaladsl.devmode.LagomDevModeComponents
@@ -16,10 +15,7 @@ import io.surfkit.projectmanager.api.ProjectManagerService
 class GatewayLoader extends LagomApplicationLoader {
 
   override def load(context: LagomApplicationContext): LagomApplication =
-    new GatewayApplication(context) with ConfigurationServiceLocatorComponents
-  //new GatewayApplication(context) {
-    //  override def serviceLocator: ServiceLocator = NoServiceLocator
-    //}
+    new GatewayApplication(context) with AkkaDiscoveryComponents
 
   override def loadDevMode(context: LagomApplicationContext): LagomApplication = {
     println("\n\n**** IN DEV MODE *****\n\n")

@@ -11,8 +11,6 @@ import com.lightbend.lagom.scaladsl.persistence.{EventStreamElement, PersistentE
 import java.util.UUID
 
 import akka.actor.ActorSystem
-import akka.management.AkkaManagement
-import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.{Done, NotUsed}
 import com.lightbend.lagom.scaladsl.server.LagomApplicationContext
 import play.api.Mode
@@ -22,11 +20,11 @@ import play.api.Mode
 class ProjectManagerServiceImpl(persistentEntityRegistry: PersistentEntityRegistry, system: ActorSystem, context: LagomApplicationContext) extends ProjectManagerService {
 
   // Akka Management hosts the HTTP routes for debugging
-  AkkaManagement.get(system).start()
+  /*AkkaManagement.get(system).start()
   if (context.playContext.environment.mode != Mode.Dev) {
     // Starting the bootstrap process in production
     ClusterBootstrap.get(system).start()
-  }
+  }*/
 
   override def getProject(id: UUID) = ServiceCall { _ =>
     val ref = persistentEntityRegistry.refFor[ProjectEntity](id.toString)

@@ -6,10 +6,7 @@ import java.util.UUID
 
 import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
-import akka.management.AkkaManagement
-import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.stream.ActorMaterializer
-import akka.util.ByteString
 import io.surfkit.gateway.api._
 import com.lightbend.lagom.scaladsl.api.ServiceCall
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntityRegistry
@@ -44,14 +41,14 @@ class GatewayServiceImpl(system: ActorSystem,
   val ws = StandaloneAhcWSClient()
 
 
-
   // Akka Management hosts the HTTP routes for debugging
-  AkkaManagement.get(system).start()
   val userResourceFolder = context.playContext.environment.mode != Mode.Dev
+  /*AkkaManagement.get(system).start()
   if (context.playContext.environment.mode != Mode.Dev) {
     // Starting the bootstrap process in production
     ClusterBootstrap.get(system).start()
-  }
+  }*/
+
 
   import GatewayServiceImpl._
   import AuthenticationServiceComposition._
